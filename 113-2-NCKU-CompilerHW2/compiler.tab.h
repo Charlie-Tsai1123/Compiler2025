@@ -35,11 +35,11 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_Y_TAB_H_INCLUDED
-# define YY_YY_Y_TAB_H_INCLUDED
+#ifndef YY_YY_COMPILER_TAB_H_INCLUDED
+# define YY_YY_COMPILER_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 0
+# define YYDEBUG 1
 #endif
 #if YYDEBUG
 extern int yydebug;
@@ -98,65 +98,19 @@ extern int yydebug;
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
-/* Token kinds.  */
-#define YYEMPTY -2
-#define YYEOF 0
-#define YYerror 256
-#define YYUNDEF 257
-#define LET 258
-#define MUT 259
-#define NEWLINE 260
-#define INT 261
-#define FLOAT 262
-#define BOOL 263
-#define STR 264
-#define TRUE 265
-#define FALSE 266
-#define GEQ 267
-#define LEQ 268
-#define EQL 269
-#define NEQ 270
-#define LOR 271
-#define LAND 272
-#define ADD_ASSIGN 273
-#define SUB_ASSIGN 274
-#define MUL_ASSIGN 275
-#define DIV_ASSIGN 276
-#define REM_ASSIGN 277
-#define IF 278
-#define ELSE 279
-#define FOR 280
-#define WHILE 281
-#define LOOP 282
-#define PRINT 283
-#define PRINTLN 284
-#define FUNC 285
-#define RETURN 286
-#define BREAK 287
-#define ARROW 288
-#define AS 289
-#define IN 290
-#define DOTDOT 291
-#define RSHIFT 292
-#define LSHIFT 293
-#define INT_LIT 294
-#define FLOAT_LIT 295
-#define STRING_LIT 296
-#define ID 297
-#define UMINUS 298
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 73 "compiler.y"
+#line 71 "compiler.y"
 
     int i_val;
     float f_val;
     char *s_val;
     /* ... */
 
-#line 160 "y.tab.h"
+#line 114 "compiler.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -171,4 +125,4 @@ extern YYSTYPE yylval;
 int yyparse (void);
 
 
-#endif /* !YY_YY_Y_TAB_H_INCLUDED  */
+#endif /* !YY_YY_COMPILER_TAB_H_INCLUDED  */

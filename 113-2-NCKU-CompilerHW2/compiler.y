@@ -62,6 +62,10 @@
 /* %error-verbose */
 /* %define parse.error verbose */
 
+/* solve conflict state */
+/* %debug
+%verbose */
+
 /* Use variable or self-defined structure to represent
  * nonterminal and token type
  *  - you can add new fields if needed.
@@ -141,6 +145,7 @@ StmtList
 Stmt
     : PrintStmt
     | DeclarationStmt
+
     | Block
 ;
 
@@ -162,9 +167,9 @@ Expr
         printf("FLOAT_LIT %f\n", $<f_val>1);
         $$ = "f32";
     }
-    | STRING_LIT {
-        printf("STRING_LIT %s\n", $<s_val>1);
-        $$ = $<s_val>1;
+    | '"' STRING_LIT '"' {
+        printf("STRING_LIT \"%s\"\n", $<s_val>2);
+        $$ = "str";
     }
     | TRUE {
         printf("bool TRUE\n");
@@ -243,29 +248,22 @@ Expr
 
 
 PrintStmt
-    : PrintType '(' '"' STRING_LIT '"' ')' ';' {
-        printf("STRING_LIT \"%s\"\n", $<s_val>4);
-        printf("%s str\n", $<s_val>1);
-    }
-    | PrintType '(' Expr ')' ';' {
+    : PrintType '(' Expr ')' ';' {
+        if (strcmp($<s_val>3, ""))
         printf("%s %s\n", $<s_val>1, $<s_val>3);
     }
 ;
 
 DeclarationStmt
-    : LET MutType ID ':' INT '=' INT_LIT ';' { printf("INT_LIT %d\n", $<i_val>7); insert_symbol($<s_val>3, $<i_val>2, "i32", "-"); }
-    | LET MutType ID ':' FLOAT '=' FLOAT_LIT ';' { printf("FLOAT_LIT %f\n", $<f_val>7); insert_symbol($<s_val>3, $<i_val>2, "f32", "-"); }
-    | LET MutType ID ':' BOOL '=' TRUE ';' { printf("bool TRUE\n"); insert_symbol($<s_val>3, $<i_val>2, "bool", "-"); }
-    | LET MutType ID ':' BOOL '=' FALSE ';' { printf("bool FALSE\n"); insert_symbol($<s_val>3, $<i_val>2, "bool", "-"); }
-    | LET MutType ID ':' STR '=' '"' STRING_LIT '"' ';' { printf("STRING_LIT \"%s\"\n", $<s_val>8); insert_symbol($<s_val>3, $<i_val>2, "str", "-"); }
-    | LET MutType ID ':' '&' STR '=' '"' STRING_LIT '"' ';' { printf("STRING_LIT \"%s\"\n", $<s_val>9); insert_symbol($<s_val>3, $<i_val>2, "str", "-"); }
+    : LET MutType ID ':' Type '=' Expr ';' { insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-"); } 
 ;
+
 
 Type
     : INT { $$ = "i32"; }
     | FLOAT { $$ = "f32"; }
     | BOOL { $$ = "bool"; }
-    | STR { $$ = "str"; }
+    | '&' STR { $$ = "str"; }
     | /* empty */ { $$ = "V"; }
 ;
 
