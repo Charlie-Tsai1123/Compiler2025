@@ -35,16 +35,14 @@
     } symbol_t;
 
     typedef struct symbol_table {
-        int parent;
         int scope_level;
         symbol_t *element;
         struct symbol_table *next;
-        struct symbol_table *prev;
     } symbol_table_t;
 
+    /* Current Symbol Table alway dummy_table->next */
     symbol_table_t *dummy_table;
 
-    symbol_table_t *current_table;
 
     /* Record next address */
     int next_addr = -1;
@@ -55,7 +53,6 @@
     static void insert_symbol(char *name, int mut, char *type, char *func_sig);
     symbol_t* lookup_symbol(char *name);
     static void dump_symbol();
-    static void parent_table();
 
     /* Global variables */
     bool HAS_ERROR = false;
@@ -123,7 +120,7 @@ FunctionDeclStmt
         char *sig = (char *)malloc(strlen($<s_val>4) + 10);
         sprintf(sig, "(%s)V", $<s_val>4);
         insert_symbol($<s_val>2, -1, "func", sig);
-    } '{' { create_symbol(); } StmtList '}' { parent_table(); }
+    } '{' { create_symbol(); } StmtList '}' { dump_symbol(); }
 ;
 
 StmtList
@@ -191,12 +188,9 @@ int main(int argc, char *argv[])
 {
     /* Initialize symbol table */
     dummy_table = (symbol_table_t*) malloc(sizeof(symbol_table_t));
-    dummy_table->parent = -1;
     dummy_table->scope_level = -1;
     dummy_table->element = NULL;
     dummy_table->next = dummy_table;
-    dummy_table->prev = dummy_table;
-    current_table = dummy_table;
 
     if (argc == 2) {
         yyin = fopen(argv[1], "r");
@@ -212,11 +206,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-static void parent_table() {
-    for (int i = 0; i <= current_table->parent; i++) {
-        current_table = dummy_table->prev;
-    }
-}
 
 static void create_symbol() {
     /* Create dummy symbol */
@@ -233,39 +222,35 @@ static void create_symbol() {
 
     /* Create symbol table */
     symbol_table_t *new_symbol_table = (symbol_table_t*) malloc(sizeof(symbol_table_t));
-    new_symbol_table->parent = current_table->scope_level;
     new_symbol_table->scope_level = dummy_table->next->scope_level + 1;
     new_symbol_table->element = dummy_symbol;
-    new_symbol_table->prev = dummy_table;
     new_symbol_table->next = dummy_table->next;
-    dummy_table->next->prev = new_symbol_table;
     dummy_table->next = new_symbol_table;
-    current_table = new_symbol_table;
 
-    printf("> Create symbol table (scope level %d)\n", current_table->scope_level);
+    printf("> Create symbol table (scope level %d)\n", dummy_table->next->scope_level);
 }
 
 static void insert_symbol(char *name, int mut, char *type, char *func_sig) {
-    printf("> Insert `%s` (addr: %d) to scope level %d\n", name, next_addr, current_table->scope_level);
+    printf("> Insert `%s` (addr: %d) to scope level %d\n", name, next_addr, dummy_table->next->scope_level);
     symbol_t *new_symbol = (symbol_t*) malloc(sizeof(symbol_t));
-    new_symbol->index = current_table->element->prev->index + 1;
-    new_symbol->name = name;
+    new_symbol->index = dummy_table->next->element->prev->index + 1;
+    new_symbol->name = strdup(name);
     new_symbol->mut = mut;
-    new_symbol->type = type;
+    new_symbol->type = strdup(type);
     new_symbol->addr = next_addr++;
     new_symbol->lineno = yylineno + 1;
-    new_symbol->func_sig = func_sig;
-    new_symbol->next = current_table->element;
-    new_symbol->prev = current_table->element->prev;
+    new_symbol->func_sig = strdup(func_sig);
+    new_symbol->next = dummy_table->next->element;
+    new_symbol->prev = dummy_table->next->element->prev;
 
-    current_table->element->prev->next = new_symbol;
-    current_table->element->prev = new_symbol;
+    dummy_table->next->element->prev->next = new_symbol;
+    dummy_table->next->element->prev = new_symbol;
 
 }
 
 symbol_t* lookup_symbol(char *name) {
-    symbol_t *tmp = current_table->element->next;
-    while (tmp != current_table->element) {
+    symbol_t *tmp = dummy_table->next->element->next;
+    while (tmp != dummy_table->next->element) {
         if (strcmp(tmp->name, name) == 0) {
             return tmp;
         }
@@ -282,18 +267,26 @@ static void dump_symbol() {
     /* printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
             0, "name", 0, "type", 0, 0, "func_sig"); */
 
+    printf("\n> Dump symbol table (scope level: %d)\n", dummy_table->next->scope_level);
+    printf("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
+        "Index", "Name", "Mut","Type", "Addr", "Lineno", "Func_sig");
+    symbol_t *cur = dummy_table->next->element->next;
+    while (cur != dummy_table->next->element) {
+        printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
+            cur->index, cur->name, cur->mut, cur->type, cur->addr, cur->lineno, cur->func_sig);
+        symbol_t *tmp = cur->next;
 
-    current_table = dummy_table->next;
-    while (current_table != dummy_table) {
-        printf("\n> Dump symbol table (scope level: %d)\n", current_table->scope_level);
-        printf("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
-            "Index", "Name", "Mut","Type", "Addr", "Lineno", "Func_sig");
-        symbol_t *current_symbol = current_table->element->next;
-        while (current_symbol != current_table->element) {
-            printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
-                current_symbol->index, current_symbol->name, current_symbol->mut, current_symbol->type, current_symbol->addr, current_symbol->lineno, current_symbol->func_sig);
-            current_symbol = current_symbol->next;
-        }
-        current_table = current_table->next;
+        free(cur->name);
+        free(cur->type);
+        free(cur->func_sig);
+        free(cur);
+
+        cur = tmp;
     }
+
+    symbol_table_t *temp = dummy_table->next;
+    dummy_table->next = temp->next;
+    free(temp->element);
+    free(temp);
+    
 }

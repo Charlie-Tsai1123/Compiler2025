@@ -102,16 +102,14 @@
     } symbol_t;
 
     typedef struct symbol_table {
-        int parent;
         int scope_level;
         symbol_t *element;
         struct symbol_table *next;
-        struct symbol_table *prev;
     } symbol_table_t;
 
+    /* Current Symbol Table alway dummy_table->next */
     symbol_table_t *dummy_table;
 
-    symbol_table_t *current_table;
 
     /* Record next address */
     int next_addr = -1;
@@ -122,13 +120,12 @@
     static void insert_symbol(char *name, int mut, char *type, char *func_sig);
     symbol_t* lookup_symbol(char *name);
     static void dump_symbol();
-    static void parent_table();
 
     /* Global variables */
     bool HAS_ERROR = false;
 
 
-#line 132 "y.tab.c"
+#line 129 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -265,14 +262,14 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 72 "compiler.y"
+#line 69 "compiler.y"
 
     int i_val;
     float f_val;
     char *s_val;
     /* ... */
 
-#line 276 "y.tab.c"
+#line 273 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -752,10 +749,10 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   107,   107,   107,   111,   112,   116,   117,   121,   126,
-     121,   130,   131,   135,   136,   140,   145,   153,   157,   163,
-     164,   165,   166,   167,   168,   172,   173,   174,   175,   176,
-     180,   181,   182,   183,   184
+       0,   104,   104,   104,   108,   109,   113,   114,   118,   123,
+     118,   127,   128,   132,   133,   137,   142,   150,   154,   160,
+     161,   162,   163,   164,   165,   169,   170,   171,   172,   173,
+     177,   178,   179,   180,   181
 };
 #endif
 
@@ -1363,174 +1360,174 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* $@1: %empty  */
-#line 107 "compiler.y"
+#line 104 "compiler.y"
       { create_symbol(); }
-#line 1369 "y.tab.c"
+#line 1366 "y.tab.c"
     break;
 
   case 3: /* Program: $@1 GlobalStatementList  */
-#line 107 "compiler.y"
+#line 104 "compiler.y"
                                                { dump_symbol(); }
-#line 1375 "y.tab.c"
+#line 1372 "y.tab.c"
     break;
 
   case 8: /* $@2: %empty  */
-#line 121 "compiler.y"
+#line 118 "compiler.y"
                            { 
         printf("func: %s\n", (yyvsp[-3].s_val)); 
         char *sig = (char *)malloc(strlen((yyvsp[-1].s_val)) + 10);
         sprintf(sig, "(%s)V", (yyvsp[-1].s_val));
         insert_symbol((yyvsp[-3].s_val), -1, "func", sig);
     }
-#line 1386 "y.tab.c"
+#line 1383 "y.tab.c"
     break;
 
   case 9: /* $@3: %empty  */
-#line 126 "compiler.y"
+#line 123 "compiler.y"
           { create_symbol(); }
-#line 1392 "y.tab.c"
+#line 1389 "y.tab.c"
     break;
 
   case 10: /* FunctionDeclStmt: FUNC ID '(' Type ')' $@2 '{' $@3 StmtList '}'  */
-#line 126 "compiler.y"
-                                            { parent_table(); }
-#line 1398 "y.tab.c"
+#line 123 "compiler.y"
+                                            { dump_symbol(); }
+#line 1395 "y.tab.c"
     break;
 
   case 15: /* Expr: ID  */
-#line 140 "compiler.y"
+#line 137 "compiler.y"
          {
         symbol_t *tmp = lookup_symbol((yyvsp[0].s_val));
         printf("IDENT (name=%s, address=%d)\n", (yyvsp[0].s_val), tmp->addr);
         (yyval.s_val) = tmp->type; 
     }
-#line 1408 "y.tab.c"
+#line 1405 "y.tab.c"
     break;
 
   case 16: /* Expr: Expr Operator Expr  */
-#line 145 "compiler.y"
+#line 142 "compiler.y"
                          { 
         printf("%s\n", (yyvsp[-1].s_val)); 
         (yyval.s_val) = (strcmp((yyvsp[-2].s_val), "f32") == 0 || strcmp((yyvsp[0].s_val), "f32") == 0) ? "f32" : "i32";
     }
-#line 1417 "y.tab.c"
+#line 1414 "y.tab.c"
     break;
 
   case 17: /* PrintStmt: PRINTLN '(' '"' STRING_LIT '"' ')' ';'  */
-#line 153 "compiler.y"
+#line 150 "compiler.y"
                                              {
         printf("STRING_LIT \"%s\"\n", (yyvsp[-3].s_val));
         printf("PRINTLN str\n");
     }
-#line 1426 "y.tab.c"
+#line 1423 "y.tab.c"
     break;
 
   case 18: /* PrintStmt: PRINTLN '(' Expr ')' ';'  */
-#line 157 "compiler.y"
+#line 154 "compiler.y"
                                {
         printf("PRINTLN %s\n", (yyvsp[-2].s_val));
     }
-#line 1434 "y.tab.c"
+#line 1431 "y.tab.c"
     break;
 
   case 19: /* DeclarationStmt: LET ID ':' INT '=' INT_LIT ';'  */
-#line 163 "compiler.y"
+#line 160 "compiler.y"
                                      { printf("INT_LIT %d\n", (yyvsp[-1].i_val)); insert_symbol((yyvsp[-5].s_val), 0, "i32", "-"); }
-#line 1440 "y.tab.c"
+#line 1437 "y.tab.c"
     break;
 
   case 20: /* DeclarationStmt: LET ID ':' FLOAT '=' FLOAT_LIT ';'  */
-#line 164 "compiler.y"
+#line 161 "compiler.y"
                                          { printf("FLOAT_LIT %f\n", (yyvsp[-1].f_val)); insert_symbol((yyvsp[-5].s_val), 0, "f32", "-"); }
-#line 1446 "y.tab.c"
+#line 1443 "y.tab.c"
     break;
 
   case 21: /* DeclarationStmt: LET ID ':' STR '=' '"' STRING_LIT '"' ';'  */
-#line 165 "compiler.y"
+#line 162 "compiler.y"
                                                 { printf("STRING_LIT %s\n", (yyvsp[-2].s_val)); insert_symbol((yyvsp[-7].s_val), 0, "str", "-"); }
-#line 1452 "y.tab.c"
+#line 1449 "y.tab.c"
     break;
 
   case 22: /* DeclarationStmt: LET MUT ID ':' INT '=' INT_LIT ';'  */
-#line 166 "compiler.y"
+#line 163 "compiler.y"
                                          { printf("INT_LIT %d\n", (yyvsp[-1].i_val)); insert_symbol((yyvsp[-5].s_val), 1, "i32", "-"); }
-#line 1458 "y.tab.c"
+#line 1455 "y.tab.c"
     break;
 
   case 23: /* DeclarationStmt: LET MUT ID ':' FLOAT '=' FLOAT_LIT ';'  */
-#line 167 "compiler.y"
+#line 164 "compiler.y"
                                              { printf("FLOAT_LIT %f\n", (yyvsp[-1].f_val)); insert_symbol((yyvsp[-5].s_val), 1, "f32", "-"); }
-#line 1464 "y.tab.c"
+#line 1461 "y.tab.c"
     break;
 
   case 24: /* DeclarationStmt: LET MUT ID ':' STR '=' '"' STRING_LIT '"' ';'  */
-#line 168 "compiler.y"
+#line 165 "compiler.y"
                                                     { printf("STRING_LIT %s\n", (yyvsp[-2].s_val)); insert_symbol((yyvsp[-7].s_val), 1, "str", "-"); }
-#line 1470 "y.tab.c"
+#line 1467 "y.tab.c"
     break;
 
   case 25: /* Type: INT  */
-#line 172 "compiler.y"
+#line 169 "compiler.y"
           { (yyval.s_val) = "i32"; }
-#line 1476 "y.tab.c"
+#line 1473 "y.tab.c"
     break;
 
   case 26: /* Type: FLOAT  */
-#line 173 "compiler.y"
+#line 170 "compiler.y"
             { (yyval.s_val) = "f32"; }
-#line 1482 "y.tab.c"
+#line 1479 "y.tab.c"
     break;
 
   case 27: /* Type: BOOL  */
-#line 174 "compiler.y"
+#line 171 "compiler.y"
            { (yyval.s_val) = "bool"; }
-#line 1488 "y.tab.c"
+#line 1485 "y.tab.c"
     break;
 
   case 28: /* Type: STR  */
-#line 175 "compiler.y"
+#line 172 "compiler.y"
           { (yyval.s_val) = "str"; }
-#line 1494 "y.tab.c"
+#line 1491 "y.tab.c"
     break;
 
   case 29: /* Type: %empty  */
-#line 176 "compiler.y"
+#line 173 "compiler.y"
                   { (yyval.s_val) = "V"; }
-#line 1500 "y.tab.c"
+#line 1497 "y.tab.c"
     break;
 
   case 30: /* Operator: '+'  */
-#line 180 "compiler.y"
+#line 177 "compiler.y"
           { (yyval.s_val) = "ADD"; }
-#line 1506 "y.tab.c"
+#line 1503 "y.tab.c"
     break;
 
   case 31: /* Operator: '-'  */
-#line 181 "compiler.y"
+#line 178 "compiler.y"
           { (yyval.s_val) = "SUB"; }
-#line 1512 "y.tab.c"
+#line 1509 "y.tab.c"
     break;
 
   case 32: /* Operator: '*'  */
-#line 182 "compiler.y"
+#line 179 "compiler.y"
           { (yyval.s_val) = "MUL"; }
-#line 1518 "y.tab.c"
+#line 1515 "y.tab.c"
     break;
 
   case 33: /* Operator: '/'  */
-#line 183 "compiler.y"
+#line 180 "compiler.y"
           { (yyval.s_val) = "DIV"; }
-#line 1524 "y.tab.c"
+#line 1521 "y.tab.c"
     break;
 
   case 34: /* Operator: '%'  */
-#line 184 "compiler.y"
+#line 181 "compiler.y"
           { (yyval.s_val) = "REM"; }
-#line 1530 "y.tab.c"
+#line 1527 "y.tab.c"
     break;
 
 
-#line 1534 "y.tab.c"
+#line 1531 "y.tab.c"
 
       default: break;
     }
@@ -1723,7 +1720,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 187 "compiler.y"
+#line 184 "compiler.y"
 
 
 /* C code section */
@@ -1731,12 +1728,9 @@ int main(int argc, char *argv[])
 {
     /* Initialize symbol table */
     dummy_table = (symbol_table_t*) malloc(sizeof(symbol_table_t));
-    dummy_table->parent = -1;
     dummy_table->scope_level = -1;
     dummy_table->element = NULL;
     dummy_table->next = dummy_table;
-    dummy_table->prev = dummy_table;
-    current_table = dummy_table;
 
     if (argc == 2) {
         yyin = fopen(argv[1], "r");
@@ -1752,11 +1746,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-static void parent_table() {
-    for (int i = 0; i <= current_table->parent; i++) {
-        current_table = dummy_table->prev;
-    }
-}
 
 static void create_symbol() {
     /* Create dummy symbol */
@@ -1773,39 +1762,35 @@ static void create_symbol() {
 
     /* Create symbol table */
     symbol_table_t *new_symbol_table = (symbol_table_t*) malloc(sizeof(symbol_table_t));
-    new_symbol_table->parent = current_table->scope_level;
     new_symbol_table->scope_level = dummy_table->next->scope_level + 1;
     new_symbol_table->element = dummy_symbol;
-    new_symbol_table->prev = dummy_table;
     new_symbol_table->next = dummy_table->next;
-    dummy_table->next->prev = new_symbol_table;
     dummy_table->next = new_symbol_table;
-    current_table = new_symbol_table;
 
-    printf("> Create symbol table (scope level %d)\n", current_table->scope_level);
+    printf("> Create symbol table (scope level %d)\n", dummy_table->next->scope_level);
 }
 
 static void insert_symbol(char *name, int mut, char *type, char *func_sig) {
-    printf("> Insert `%s` (addr: %d) to scope level %d\n", name, next_addr, current_table->scope_level);
+    printf("> Insert `%s` (addr: %d) to scope level %d\n", name, next_addr, dummy_table->next->scope_level);
     symbol_t *new_symbol = (symbol_t*) malloc(sizeof(symbol_t));
-    new_symbol->index = current_table->element->prev->index + 1;
-    new_symbol->name = name;
+    new_symbol->index = dummy_table->next->element->prev->index + 1;
+    new_symbol->name = strdup(name);
     new_symbol->mut = mut;
-    new_symbol->type = type;
+    new_symbol->type = strdup(type);
     new_symbol->addr = next_addr++;
     new_symbol->lineno = yylineno + 1;
-    new_symbol->func_sig = func_sig;
-    new_symbol->next = current_table->element;
-    new_symbol->prev = current_table->element->prev;
+    new_symbol->func_sig = strdup(func_sig);
+    new_symbol->next = dummy_table->next->element;
+    new_symbol->prev = dummy_table->next->element->prev;
 
-    current_table->element->prev->next = new_symbol;
-    current_table->element->prev = new_symbol;
+    dummy_table->next->element->prev->next = new_symbol;
+    dummy_table->next->element->prev = new_symbol;
 
 }
 
 symbol_t* lookup_symbol(char *name) {
-    symbol_t *tmp = current_table->element->next;
-    while (tmp != current_table->element) {
+    symbol_t *tmp = dummy_table->next->element->next;
+    while (tmp != dummy_table->next->element) {
         if (strcmp(tmp->name, name) == 0) {
             return tmp;
         }
@@ -1822,18 +1807,26 @@ static void dump_symbol() {
     /* printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
             0, "name", 0, "type", 0, 0, "func_sig"); */
 
+    printf("\n> Dump symbol table (scope level: %d)\n", dummy_table->next->scope_level);
+    printf("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
+        "Index", "Name", "Mut","Type", "Addr", "Lineno", "Func_sig");
+    symbol_t *cur = dummy_table->next->element->next;
+    while (cur != dummy_table->next->element) {
+        printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
+            cur->index, cur->name, cur->mut, cur->type, cur->addr, cur->lineno, cur->func_sig);
+        symbol_t *tmp = cur->next;
 
-    current_table = dummy_table->next;
-    while (current_table != dummy_table) {
-        printf("\n> Dump symbol table (scope level: %d)\n", current_table->scope_level);
-        printf("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
-            "Index", "Name", "Mut","Type", "Addr", "Lineno", "Func_sig");
-        symbol_t *current_symbol = current_table->element->next;
-        while (current_symbol != current_table->element) {
-            printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
-                current_symbol->index, current_symbol->name, current_symbol->mut, current_symbol->type, current_symbol->addr, current_symbol->lineno, current_symbol->func_sig);
-            current_symbol = current_symbol->next;
-        }
-        current_table = current_table->next;
+        free(cur->name);
+        free(cur->type);
+        free(cur->func_sig);
+        free(cur);
+
+        cur = tmp;
     }
+
+    symbol_table_t *temp = dummy_table->next;
+    dummy_table->next = temp->next;
+    free(temp->element);
+    free(temp);
+    
 }
