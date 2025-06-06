@@ -93,7 +93,16 @@
 /* Nonterminal with return, which need to sepcify type */
 %type <s_val> Type
 %type <s_val> Expr
-%type <s_val> Operator
+%type <s_val> PrintType
+
+/* Define operator precedence and associativity */
+%left LOR
+%left LAND
+%right '!'
+%nonassoc GEQ LEQ EQL NEQ '>' '<'
+%left '+' '-'
+%left '*' '/' '%'
+%right UMINUS
 
 /* Yacc will start at this nonterminal */
 %start Program
@@ -139,20 +148,101 @@ Expr
         printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
         $$ = tmp->type; 
     }
-    | Expr Operator Expr { 
-        printf("%s\n", $<s_val>2); 
+    | INT_LIT {
+        printf("INT_LIT %d\n", $<i_val>1);
+        $$ = "i32";
+    }
+    | FLOAT_LIT {
+        printf("FLOAT_LIT %f\n", $<f_val>1);
+        $$ = "f32";
+    }
+    | STRING_LIT {
+        printf("STRING_LIT %s\n", $<s_val>1);
+        $$ = $<s_val>1;
+    }
+    | TRUE {
+        printf("bool TRUE\n");
+        $$ = "bool";
+    }
+    | FALSE {
+        printf("bool FALSE\n");
+        $$ = "bool";
+    }
+    | '-' Expr %prec UMINUS {
+        printf("NEG\n");
+        $$ = $<s_val>2;
+    }
+    | '!' Expr {
+        printf("NOT\n");
+        $$ = $<s_val>2;
+    }
+    | '(' Expr ')' { $$ = $<s_val>2; }
+    | Expr '*' Expr {
+        printf("MUL\n");
         $$ = (strcmp($<s_val>1, "f32") == 0 || strcmp($<s_val>3, "f32") == 0) ? "f32" : "i32";
     }
+    | Expr '/' Expr {
+        printf("DIV\n");
+        $$ = (strcmp($<s_val>1, "f32") == 0 || strcmp($<s_val>3, "f32") == 0) ? "f32" : "i32";
+    }
+    | Expr '%' Expr {
+        printf("REM\n");
+        $$ = (strcmp($<s_val>1, "f32") == 0 || strcmp($<s_val>3, "f32") == 0) ? "f32" : "i32";
+    }
+    | Expr '+' Expr {
+        printf("ADD\n");
+        $$ = (strcmp($<s_val>1, "f32") == 0 || strcmp($<s_val>3, "f32") == 0) ? "f32" : "i32";
+    }
+    | Expr '-' Expr {
+        printf("SUB\n");
+        $$ = (strcmp($<s_val>1, "f32") == 0 || strcmp($<s_val>3, "f32") == 0) ? "f32" : "i32";
+    }
+    | Expr LAND Expr {
+        printf("LAND\n");
+        $$ = "bool";
+    }
+    | Expr LOR Expr {
+        printf("LOR\n");
+        $$ = "bool";
+    }
+    | Expr GEQ Expr {
+        printf("GEQ\n");
+        $$ = "bool";
+    }
+    | Expr LEQ Expr {
+        printf("LEQ\n");
+        $$ = "bool";
+    }
+
+    | Expr EQL Expr {
+        printf("EQL\n");
+        $$ = "bool";
+    }
+
+    | Expr NEQ Expr {
+        printf("NEQ\n");
+        $$ = "bool";
+    }
+    | Expr '>' Expr {
+        printf("GTR\n");
+        $$ = "bool";
+    }
+
+    | Expr '<' Expr {
+        printf("LTR\n");
+        $$ = "bool";
+    }
+    
 ;
 
 
 PrintStmt
-    : PRINTLN '(' '"' STRING_LIT '"' ')' ';' {
+    : PrintType '(' '"' STRING_LIT '"' ')' ';' {
         printf("STRING_LIT \"%s\"\n", $<s_val>4);
-        printf("PRINTLN str\n");
+        printf("%s str\n", $<s_val>1);
     }
-    | PRINTLN '(' Expr ')' ';' {
-        printf("PRINTLN %s\n", $<s_val>3);
+    | PrintType '(' Expr ')' ';' {
+        printf("%s %s\n", $<s_val>1, $<s_val>3);
     }
 ;
 
@@ -173,12 +263,9 @@ Type
     | /* empty */ { $$ = "V"; }
 ;
 
-Operator
-    : '+' { $$ = "ADD"; }
-    | '-' { $$ = "SUB"; }
-    | '*' { $$ = "MUL"; }
-    | '/' { $$ = "DIV"; }
-    | '%' { $$ = "REM"; }
+PrintType
+    : PRINT { $$ = "PRINT"; }
+    | PRINTLN { $$ = "PRINTLN"; }
 ;
 
 %%
