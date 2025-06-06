@@ -94,6 +94,7 @@
 %type <s_val> Type
 %type <s_val> Expr
 %type <s_val> PrintType
+%type <i_val> MutType
 
 /* Define operator precedence and associativity */
 %left LOR
@@ -129,7 +130,7 @@ FunctionDeclStmt
         char *sig = (char *)malloc(strlen($<s_val>4) + 10);
         sprintf(sig, "(%s)V", $<s_val>4);
         insert_symbol($<s_val>2, -1, "func", sig);
-    } '{' { create_symbol(); } StmtList '}' { dump_symbol(); }
+    } Block
 ;
 
 StmtList
@@ -140,6 +141,11 @@ StmtList
 Stmt
     : PrintStmt
     | DeclarationStmt
+    | Block
+;
+
+Block
+    : '{' { create_symbol(); } StmtList '}' { dump_symbol(); }
 ;
 
 Expr
@@ -247,12 +253,12 @@ PrintStmt
 ;
 
 DeclarationStmt
-    : LET ID ':' INT '=' INT_LIT ';' { printf("INT_LIT %d\n", $<i_val>6); insert_symbol($<s_val>2, 0, "i32", "-"); }
-    | LET ID ':' FLOAT '=' FLOAT_LIT ';' { printf("FLOAT_LIT %f\n", $<f_val>6); insert_symbol($<s_val>2, 0, "f32", "-"); }
-    | LET ID ':' STR '=' '"' STRING_LIT '"' ';' { printf("STRING_LIT %s\n", $<s_val>7); insert_symbol($<s_val>2, 0, "str", "-"); }
-    | LET MUT ID ':' INT '=' INT_LIT ';' { printf("INT_LIT %d\n", $<i_val>7); insert_symbol($<s_val>3, 1, "i32", "-"); }
-    | LET MUT ID ':' FLOAT '=' FLOAT_LIT ';' { printf("FLOAT_LIT %f\n", $<f_val>7); insert_symbol($<s_val>3, 1, "f32", "-"); }
-    | LET MUT ID ':' STR '=' '"' STRING_LIT '"' ';' { printf("STRING_LIT %s\n", $<s_val>8); insert_symbol($<s_val>3, 1, "str", "-"); }
+    : LET MutType ID ':' INT '=' INT_LIT ';' { printf("INT_LIT %d\n", $<i_val>7); insert_symbol($<s_val>3, $<i_val>2, "i32", "-"); }
+    | LET MutType ID ':' FLOAT '=' FLOAT_LIT ';' { printf("FLOAT_LIT %f\n", $<f_val>7); insert_symbol($<s_val>3, $<i_val>2, "f32", "-"); }
+    | LET MutType ID ':' BOOL '=' TRUE ';' { printf("bool TRUE\n"); insert_symbol($<s_val>3, $<i_val>2, "bool", "-"); }
+    | LET MutType ID ':' BOOL '=' FALSE ';' { printf("bool FALSE\n"); insert_symbol($<s_val>3, $<i_val>2, "bool", "-"); }
+    | LET MutType ID ':' STR '=' '"' STRING_LIT '"' ';' { printf("STRING_LIT \"%s\"\n", $<s_val>8); insert_symbol($<s_val>3, $<i_val>2, "str", "-"); }
+    | LET MutType ID ':' '&' STR '=' '"' STRING_LIT '"' ';' { printf("STRING_LIT \"%s\"\n", $<s_val>9); insert_symbol($<s_val>3, $<i_val>2, "str", "-"); }
 ;
 
 Type
@@ -266,6 +272,11 @@ Type
 PrintType
     : PRINT { $$ = "PRINT"; }
     | PRINTLN { $$ = "PRINTLN"; }
+;
+
+MutType
+    : MUT { $$ = 1; }
+    | /* empty */ { $$ = 0; }
 ;
 
 %%
@@ -336,12 +347,16 @@ static void insert_symbol(char *name, int mut, char *type, char *func_sig) {
 }
 
 symbol_t* lookup_symbol(char *name) {
-    symbol_t *tmp = dummy_table->next->element->next;
-    while (tmp != dummy_table->next->element) {
-        if (strcmp(tmp->name, name) == 0) {
-            return tmp;
+    symbol_table_t *temp_table = dummy_table->next;
+    while (temp_table != dummy_table) {
+        symbol_t *tmp = temp_table->element->next;
+        while (tmp != temp_table->element) {
+            if (strcmp(tmp->name, name) == 0) {
+                return tmp;
+            }
+            tmp = tmp->next;
         }
-        tmp = tmp->next;
+        temp_table = temp_table->next;
     }
 
     return NULL;
