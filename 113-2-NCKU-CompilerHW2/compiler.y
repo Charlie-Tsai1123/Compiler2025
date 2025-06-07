@@ -13,7 +13,7 @@
     int yylex_destroy ();
     void yyerror (char const *s)
     {
-        printf("error:%d: %s\n", yylineno, s);
+        printf("error:%d: %s\n", yylineno + 1, s);
     }
 
     extern int yylineno;
@@ -100,6 +100,7 @@
 %type <s_val> PrintType
 %type <i_val> MutType
 %type <s_val> AssignmentOperatorType
+%type <s_val> ArrayElements
 
 /* Define operator precedence and associativity */
 %nonassoc IFX
@@ -108,6 +109,7 @@
 %left LAND
 %right '!'
 %nonassoc GEQ LEQ EQL NEQ '>' '<'
+%left LSHIFT RSHIFT
 %left '+' '-'
 %left '*' '/' '%'
 %right UMINUS
@@ -162,8 +164,17 @@ Block
 Expr
     : ID {
         symbol_t *tmp = lookup_symbol($<s_val>1);
-        printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
-        $$ = tmp->type; 
+        if (tmp == NULL) {
+            char msg[100];
+            sprintf(msg, "undefined: %s", $<s_val>1);
+            yyerror(msg);
+            HAS_ERROR = TRUE;
+            $$ = "undefined";
+        } else {
+            printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
+            $$ = tmp->type; 
+        }
+        
     }
     | INT_LIT {
         printf("INT_LIT %d\n", $<i_val>1);
@@ -188,6 +199,16 @@ Expr
     | FALSE {
         printf("bool FALSE\n");
         $$ = "bool";
+    }
+    | '[' ArrayElements ']' {
+        $$ = $<s_val>2;
+    }
+    | ID '[' INT_LIT ']' {
+        symbol_t *tmp = lookup_symbol($<s_val>1);
+        printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
+        $$ = tmp->type; 
+        printf("INT_LIT %d\n", $<i_val>3);
+        $$ = "array";
     }
     | '-' Expr %prec UMINUS {
         printf("NEG\n");
@@ -218,6 +239,27 @@ Expr
         printf("SUB\n");
         $$ = (strcmp($<s_val>1, "f32") == 0 || strcmp($<s_val>3, "f32") == 0) ? "f32" : "i32";
     }
+    | Expr LSHIFT Expr {
+        
+        if (strcmp($<s_val>1, "i32") != 0 || strcmp($<s_val>3, "i32") != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: LSHIFT (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }
+        printf("LSHIFT\n");
+        $$ = $<s_val>1;
+        
+    }
+    | Expr RSHIFT Expr {
+        printf("RSHIFT\n");
+        if (strcmp($<s_val>1, "i32") == 0 && strcmp($<s_val>3, "i32") == 0) {
+            $$ = $<s_val>1;
+        } else {
+            char msg[100];
+            sprintf(msg, "invalid operation: RSHIFT (mismatched types %s and %s)\n", $<s_val>1, $<s_val>3);
+        }
+    }
     | Expr LAND Expr {
         printf("LAND\n");
         $$ = "bool";
@@ -227,29 +269,65 @@ Expr
         $$ = "bool";
     }
     | Expr GEQ Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: GEQ (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }
         printf("GEQ\n");
         $$ = "bool";
     }
     | Expr LEQ Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: LEQ (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }
         printf("LEQ\n");
         $$ = "bool";
     }
 
     | Expr EQL Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: EQL (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }
         printf("EQL\n");
         $$ = "bool";
     }
 
     | Expr NEQ Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: NEQ (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }
         printf("NEQ\n");
         $$ = "bool";
     }
     | Expr '>' Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: GTR (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }
         printf("GTR\n");
         $$ = "bool";
     }
 
     | Expr '<' Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: LSS (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }
         printf("LSS\n");
         $$ = "bool";
     }
@@ -258,6 +336,11 @@ Expr
         $$ = $<s_val>3;
     }
     
+;
+
+ArrayElements
+    : ArrayElements ',' Expr { $$ = $<s_val>3; }
+    | Expr { $$ = $<s_val>1; }
 ;
 
 PrintStmt
@@ -273,7 +356,23 @@ DeclarationStmt
 ;
 
 AssignmentStmt
-    : ID AssignmentOperatorType Expr ';' { printf("%s\n", $<s_val>2); }
+    : ID AssignmentOperatorType Expr ';' { 
+        symbol_t *target = lookup_symbol($<s_val>1);
+        if (target == NULL) {
+            char msg[100];
+            sprintf(msg, "undefined: %s", $<s_val>1);
+            yyerror(msg);
+            HAS_ERROR = true;
+        }else {
+            printf("%s\n", $<s_val>2);
+            if (target->mut != 1) {
+                char msg[100];
+                sprintf(msg, "cannot borrow immutable borrowed content `%s` as mutable", $<s_val>1);
+                yyerror(msg);
+                HAS_ERROR = true;
+            }
+        } 
+    }
 ;
 
 IfStmt
@@ -291,6 +390,7 @@ Type
     | FLOAT { $$ = "f32"; }
     | BOOL { $$ = "bool"; }
     | '&' STR { $$ = "str"; }
+    | '[' Type ';' Expr ']' { $$ = "array"; }
     | /* empty */ { $$ = "V"; }
 ;
 
