@@ -63,8 +63,8 @@
 /* %define parse.error verbose */
 
 /* solve conflict state */
-/* %debug
-%verbose */
+/* %debug */
+/* %verbose */
 
 /* Use variable or self-defined structure to represent
  * nonterminal and token type
@@ -99,6 +99,7 @@
 %type <s_val> Expr
 %type <s_val> PrintType
 %type <i_val> MutType
+%type <s_val> AssignmentOperatorType
 
 /* Define operator precedence and associativity */
 %left LOR
@@ -108,6 +109,7 @@
 %left '+' '-'
 %left '*' '/' '%'
 %right UMINUS
+%right AS
 
 /* Yacc will start at this nonterminal */
 %start Program
@@ -145,7 +147,7 @@ StmtList
 Stmt
     : PrintStmt
     | DeclarationStmt
-
+    | AssignmentStmt
     | Block
 ;
 
@@ -169,6 +171,10 @@ Expr
     }
     | '"' STRING_LIT '"' {
         printf("STRING_LIT \"%s\"\n", $<s_val>2);
+        $$ = "str";
+    }
+    | '"' '"' {
+        printf("STRING_LIT \"\"\n");
         $$ = "str";
     }
     | TRUE {
@@ -243,21 +249,28 @@ Expr
         printf("LTR\n");
         $$ = "bool";
     }
+    | Expr AS Type { 
+        printf("%c2%c\n", $<s_val>1[0], $<s_val>3[0]);
+        $$ = $<s_val>3;
+    }
     
 ;
 
 
 PrintStmt
     : PrintType '(' Expr ')' ';' {
-        if (strcmp($<s_val>3, ""))
         printf("%s %s\n", $<s_val>1, $<s_val>3);
     }
 ;
 
 DeclarationStmt
     : LET MutType ID ':' Type '=' Expr ';' { insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-"); } 
+    | LET MutType ID ':' Type ';' { insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-"); }
 ;
 
+AssignmentStmt
+    : ID AssignmentOperatorType Expr ';' { printf("%s\n", $<s_val>2); }
+;
 
 Type
     : INT { $$ = "i32"; }
@@ -275,6 +288,15 @@ PrintType
 MutType
     : MUT { $$ = 1; }
     | /* empty */ { $$ = 0; }
+;
+
+AssignmentOperatorType
+    : '=' { $$ = "ASSIGN"; }
+    | ADD_ASSIGN { $$ = "ADD_ASSIGN"; }
+    | SUB_ASSIGN { $$ = "SUB_ASSIGN"; }
+    | MUL_ASSIGN { $$ = "MUL_ASSIGN"; }
+    | DIV_ASSIGN { $$ = "DIV_ASSIGN"; }
+    | REM_ASSIGN { $$ = "REM_ASSIGN"; }
 ;
 
 %%
