@@ -152,6 +152,7 @@ Stmt
     | AssignmentStmt
     | Block
     | IfStmt
+    | WhileStmt
 ;
 
 Block
@@ -249,7 +250,7 @@ Expr
     }
 
     | Expr '<' Expr {
-        printf("LTR\n");
+        printf("LSS\n");
         $$ = "bool";
     }
     | Expr AS Type { 
@@ -258,7 +259,6 @@ Expr
     }
     
 ;
-
 
 PrintStmt
     : PrintType '(' Expr ')' ';' {
@@ -269,6 +269,7 @@ PrintStmt
 DeclarationStmt
     : LET MutType ID ':' Type '=' Expr ';' { insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-"); } 
     | LET MutType ID ':' Type ';' { insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-"); }
+    | LET MutType ID '=' Expr ';' { insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-"); }
 ;
 
 AssignmentStmt
@@ -278,6 +279,10 @@ AssignmentStmt
 IfStmt
     : IF Expr Block %prec IFX
     | IF Expr Block ELSE Block 
+;
+
+WhileStmt
+    : WHILE Expr Block
 ;
 
 ;
