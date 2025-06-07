@@ -94,7 +94,8 @@ extern int yydebug;
     FLOAT_LIT = 295,               /* FLOAT_LIT  */
     STRING_LIT = 296,              /* STRING_LIT  */
     ID = 297,                      /* ID  */
-    UMINUS = 298                   /* UMINUS  */
+    IFX = 298,                     /* IFX  */
+    UMINUS = 299                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -143,7 +144,8 @@ extern int yydebug;
 #define FLOAT_LIT 295
 #define STRING_LIT 296
 #define ID 297
-#define UMINUS 298
+#define IFX 298
+#define UMINUS 299
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -156,7 +158,7 @@ union YYSTYPE
     char *s_val;
     /* ... */
 
-#line 160 "y.tab.h"
+#line 162 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

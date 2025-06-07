@@ -102,6 +102,8 @@
 %type <s_val> AssignmentOperatorType
 
 /* Define operator precedence and associativity */
+%nonassoc IFX
+%nonassoc ELSE
 %left LOR
 %left LAND
 %right '!'
@@ -149,6 +151,7 @@ Stmt
     | DeclarationStmt
     | AssignmentStmt
     | Block
+    | IfStmt
 ;
 
 Block
@@ -272,6 +275,12 @@ AssignmentStmt
     : ID AssignmentOperatorType Expr ';' { printf("%s\n", $<s_val>2); }
 ;
 
+IfStmt
+    : IF Expr Block %prec IFX
+    | IF Expr Block ELSE Block 
+;
+
+;
 Type
     : INT { $$ = "i32"; }
     | FLOAT { $$ = "f32"; }
