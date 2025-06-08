@@ -102,6 +102,7 @@
 %type <s_val> AssignmentOperatorType
 %type <s_val> ArrayElements
 %type <s_val> FunctionArguments
+%type <s_val> ArrowType
 
 /* Define operator precedence and associativity */
 %nonassoc IFX
@@ -136,10 +137,10 @@ GlobalStatement
 ;
 
 FunctionDeclStmt
-    : FUNC ID '(' FunctionArguments ')' { 
+    : FUNC ID '(' FunctionArguments ')' ArrowType { 
         printf("func: %s\n", $<s_val>2); 
         char *sig = (char *)malloc(strlen($<s_val>4) + 10);
-        sprintf(sig, "(%s)V", $<s_val>4);
+        sprintf(sig, "(%s)%s", $<s_val>4, $<s_val>6);
         insert_symbol($<s_val>2, -1, "func", sig);
     } Block
 ;
@@ -420,6 +421,11 @@ FunctionArguments
         $$ = buf;
     }
     | Type ID { $$ = $<s_val>1; }
+    | /* empty */ { $$ = "V"; }
+;
+
+ArrowType
+    : ARROW Type { $$ = $<s_val>2; }
     | /* empty */ { $$ = "V"; }
 ;
 
