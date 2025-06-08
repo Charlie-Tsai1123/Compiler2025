@@ -18,6 +18,9 @@
 		getstatic java/lang/System/out Ljava/io/PrintStream;
 		iload 0
 		invokevirtual java/io/PrintStream/println(I)V
+		iload 0
 		ldc 1
+		iadd
+		istore 0
 		return
 	.end method

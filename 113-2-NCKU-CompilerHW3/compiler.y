@@ -204,7 +204,15 @@ Expr
             g_has_error = TRUE;
             $$ = "undefined";
         } else {
-            CODEGEN("%cload %d\n", tmp->type[0] + 32, tmp->addr);
+            char type;
+            if (tmp->type[0] == 'Z') {
+                type = 'i';
+            } else if (strcmp(tmp->type, "Ljava/lang/String;") == 0) {
+                type = 'a';
+            } else {
+                type = tmp->type[0] + 32;
+            }
+            CODEGEN("%cload %d\n", type, tmp->addr);
             // printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
             $$ = tmp->type; 
         }
@@ -423,20 +431,44 @@ PrintStmt
 DeclarationStmt
     : LET MutType ID ':' Type '=' Expr ';' { 
         insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
-        CODEGEN("%cstore %d\n", $<s_val>5[0] + 32, lookup_symbol($<s_val>3)->addr);
+        char type;
+        if ($<s_val>5[0] == 'Z') {
+            type = 'i';
+        } else if (strcmp($<s_val>5, "Ljava/lang/String;") == 0) {
+            type = 'a';
+        } else {
+            type = $<s_val>5[0] + 32;
+        }
+        CODEGEN("%cstore %d\n", type, lookup_symbol($<s_val>3)->addr);
     } 
     | LET MutType ID ':' Type ';' { 
         insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
-        CODEGEN("%cstore %d\n", $<s_val>5[0] + 32, lookup_symbol($<s_val>3)->addr);
+        char type;
+        if ($<s_val>5[0] == 'Z') {
+            type = 'i';
+        } else if (strcmp($<s_val>5, "Ljava/lang/String;") == 0) {
+            type = 'a';
+        } else {
+            type = $<s_val>5[0] + 32;
+        }
+        CODEGEN("%cstore %d\n", type, lookup_symbol($<s_val>3)->addr);
     }
     | LET MutType ID '=' Expr ';' { 
         insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
-        CODEGEN("%cstore %d\n", $<s_val>5[0] + 32, lookup_symbol($<s_val>3)->addr);
+        char type;
+        if ($<s_val>5[0] == 'Z') {
+            type = 'i';
+        } else if (strcmp($<s_val>5, "Ljava/lang/String;") == 0) {
+            type = 'a';
+        } else {
+            type = $<s_val>5[0] + 32;
+        }
+        CODEGEN("%cstore %d\n", type, lookup_symbol($<s_val>3)->addr);
     }
 ;
 
 AssignmentStmt
-    : ID AssignmentOperatorType Expr ';' { 
+    :ID '=' Expr ';' {
         symbol_t *target = lookup_symbol($<s_val>1);
         if (target == NULL) {
             char msg[100];
@@ -444,13 +476,75 @@ AssignmentStmt
             yyerror(msg);
             g_has_error = true;
         }else {
-            printf("%s\n", $<s_val>2);
+            //printf("%s\n", $<s_val>2);
             if (target->mut != 1) {
                 char msg[100];
                 sprintf(msg, "cannot borrow immutable borrowed content `%s` as mutable", $<s_val>1);
                 yyerror(msg);
                 g_has_error = true;
             }
+            char type;
+            if ($<s_val>3[0] == 'Z') {
+                type = 'i';
+            } else if (strcmp($<s_val>3, "Ljava/lang/String;") == 0) {
+                type = 'a';
+            } else {
+                type = target->type[0] + 32;
+            }
+
+            CODEGEN("%cstore %d\n", type, target->addr);
+        } 
+    }
+    | ID {
+        symbol_t *target = lookup_symbol($<s_val>1);
+        if (target == NULL) {
+            char msg[100];
+            sprintf(msg, "undefined: %s", $<s_val>1);
+            yyerror(msg);
+            g_has_error = true;
+        }else {
+            //printf("%s\n", $<s_val>2);
+            if (target->mut != 1) {
+                char msg[100];
+                sprintf(msg, "cannot borrow immutable borrowed content `%s` as mutable", $<s_val>1);
+                yyerror(msg);
+                g_has_error = true;
+            }
+            char type;
+            if (target->type[0] == 'Z') {
+                type = 'i';
+            } else if (strcmp(target->type, "Ljava/lang/String;") == 0) {
+                type = 'a';
+            } else {
+                type = target->type[0] + 32;
+            }
+            CODEGEN("%cload %d\n", type, target->addr);
+        } 
+    }   AssignmentOperatorType Expr ';' { 
+        symbol_t *target = lookup_symbol($<s_val>1);
+        if (target == NULL) {
+            char msg[100];
+            sprintf(msg, "undefined: %s", $<s_val>1);
+            yyerror(msg);
+            g_has_error = true;
+        }else {
+            //printf("%s\n", $<s_val>2);
+            if (target->mut != 1) {
+                char msg[100];
+                sprintf(msg, "cannot borrow immutable borrowed content `%s` as mutable", $<s_val>1);
+                yyerror(msg);
+                g_has_error = true;
+            }
+            char type;
+            if ($<s_val>4[0] == 'Z') {
+                type = 'i';
+            } else if (strcmp($<s_val>4, "Ljava/lang/String;") == 0) {
+                type = 'a';
+            } else {
+                type = target->type[0] + 32;
+            }
+            CODEGEN("%c%s\n", type, $<s_val>3);
+            CODEGEN("%cstore %d\n", type, target->addr);
         } 
     }
 ;
@@ -488,12 +582,11 @@ MutType
 ;
 
 AssignmentOperatorType
-    : '=' { $$ = "ASSIGN"; }
-    | ADD_ASSIGN { $$ = "ADD_ASSIGN"; }
-    | SUB_ASSIGN { $$ = "SUB_ASSIGN"; }
-    | MUL_ASSIGN { $$ = "MUL_ASSIGN"; }
-    | DIV_ASSIGN { $$ = "DIV_ASSIGN"; }
-    | REM_ASSIGN { $$ = "REM_ASSIGN"; }
+    : ADD_ASSIGN { $$ = "add"; }
+    | SUB_ASSIGN { $$ = "sub"; }
+    | MUL_ASSIGN { $$ = "mul"; }
+    | DIV_ASSIGN { $$ = "div"; }
+    | REM_ASSIGN { $$ = "rem"; }
 ;
 
 FunctionArguments
