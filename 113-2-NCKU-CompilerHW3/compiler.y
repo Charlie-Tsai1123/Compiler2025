@@ -72,6 +72,7 @@
     bool g_has_error = false;
     FILE *fout = NULL;
     int g_indent_cnt = 0;
+    int g_label_cnt = 0;
 %}
 
 /* %error-verbose */
@@ -108,9 +109,9 @@
 %type <s_val> Type
 %type <s_val> Expr
 %type <s_val> PrintType
-/* %type <i_val> MutType
+%type <i_val> MutType
 %type <s_val> AssignmentOperatorType
-%type <s_val> ArrayElements */
+%type <s_val> ArrayElements
 %type <s_val> FunctionArguments
 %type <s_val> ArrowType
 
@@ -180,6 +181,11 @@ StmtList
 
 Stmt
     : PrintStmt
+    | DeclarationStmt
+    | AssignmentStmt
+    | Block
+    | IfStmt
+    | WhileStmt
 ;
 
 Block
@@ -198,18 +204,19 @@ Expr
             g_has_error = TRUE;
             $$ = "undefined";
         } else {
-            printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
+            CODEGEN("%cload %d\n", tmp->type[0] + 32, tmp->addr);
+            // printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
             $$ = tmp->type; 
         }
         
     }
     | INT_LIT {
-        printf("INT_LIT %d\n", $<i_val>1);
-        $$ = "i32";
+        CODEGEN("ldc %d\n", $<i_val>1);
+        $$ = "I";
     }
     | FLOAT_LIT {
-        printf("FLOAT_LIT %f\n", $<f_val>1);
-        $$ = "f32";
+        CODEGEN("ldc %f\n", $<f_val>1);
+        $$ = "F";
     }
     | '"' STRING_LIT '"' {
         CODEGEN("ldc \"%s\"\n", $<s_val>2);
@@ -218,17 +225,191 @@ Expr
         $$ = "Ljava/lang/String;";
     }
     | '"' '"' {
-        printf("STRING_LIT \"\"\n");
+        CODEGEN("ldc \"\"\n");
+
+        //printf("STRING_LIT \"\"\n");
         $$ = "Ljava/lang/String;";
     }
     | TRUE {
-        printf("bool TRUE\n");
-        $$ = "bool";
+        CODEGEN("iconst_1\n");
+        $$ = "Z";
     }
     | FALSE {
-        printf("bool FALSE\n");
-        $$ = "bool";
+        CODEGEN("iconst_0\n");
+        $$ = "Z";
     }
+    | '[' ArrayElements ']' {
+        $$ = $<s_val>2;
+    }
+    | ID '[' INT_LIT ']' {
+        symbol_t *tmp = lookup_symbol($<s_val>1);
+        printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
+        $$ = tmp->type; 
+        printf("INT_LIT %d\n", $<i_val>3);
+        $$ = "array";
+    }
+    | '-' Expr %prec UMINUS {
+        CODEGEN("%cneg\n", $<s_val>2[0] + 32);
+        $$ = $<s_val>2;
+    }
+    | '!' Expr {
+        CODEGEN("iconst_1\n");
+        CODEGEN("ixor\n");
+        // printf("NOT\n");
+        $$ = $<s_val>2;
+    }
+    | '(' Expr ')' { $$ = $<s_val>2; }
+    | Expr '*' Expr {
+        CODEGEN("%cmul\n", $<s_val>1[0] + 32);
+        $$ = (strcmp($<s_val>1, "F") == 0 || strcmp($<s_val>3, "F") == 0) ? "F" : "I";
+    }
+    | Expr '/' Expr {
+        CODEGEN("%cdiv\n", $<s_val>1[0] + 32);
+        $$ = (strcmp($<s_val>1, "F") == 0 || strcmp($<s_val>3, "F") == 0) ? "F" : "I";
+    }
+    | Expr '%' Expr {
+        CODEGEN("%crem\n", $<s_val>1[0] + 32);
+        $$ = (strcmp($<s_val>1, "F") == 0 || strcmp($<s_val>3, "F") == 0) ? "F" : "I";
+    }
+    | Expr '+' Expr {
+        CODEGEN("%cadd\n", $<s_val>1[0] + 32);
+        $$ = (strcmp($<s_val>1, "F") == 0 || strcmp($<s_val>3, "F") == 0) ? "F" : "I";
+    }
+    | Expr '-' Expr {
+        CODEGEN("%csub\n", $<s_val>1[0] + 32);
+        $$ = (strcmp($<s_val>1, "F") == 0 || strcmp($<s_val>3, "F") == 0) ? "F" : "I";
+    }
+    | Expr LSHIFT Expr {
+        
+        if (strcmp($<s_val>1, "I") != 0 || strcmp($<s_val>3, "I") != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: LSHIFT (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            g_has_error = true;
+        }
+        printf("LSHIFT\n");
+        $$ = $<s_val>1;
+        
+    }
+    | Expr RSHIFT Expr {
+        printf("RSHIFT\n");
+        if (strcmp($<s_val>1, "I") == 0 && strcmp($<s_val>3, "I") == 0) {
+            $$ = $<s_val>1;
+        } else {
+            char msg[100];
+            sprintf(msg, "invalid operation: RSHIFT (mismatched types %s and %s)\n", $<s_val>1, $<s_val>3);
+        }
+    }
+    | Expr LAND Expr {
+        CODEGEN("iand\n");
+        //printf("LAND\n");
+        $$ = "Z";
+    }
+    | Expr LOR Expr {
+        CODEGEN("ior\n");
+        //printf("LOR\n");
+        $$ = "Z";
+    }
+    | Expr GEQ Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: GEQ (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            g_has_error = true;
+        }
+        printf("GEQ\n");
+        $$ = "Z";
+    }
+    | Expr LEQ Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: LEQ (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            g_has_error = true;
+        }
+        printf("LEQ\n");
+        $$ = "Z";
+    }
+
+    | Expr EQL Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: EQL (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            g_has_error = true;
+        }
+        printf("EQL\n");
+        $$ = "Z";
+    }
+
+    | Expr NEQ Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: NEQ (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            g_has_error = true;
+        }
+        printf("NEQ\n");
+        $$ = "Z";
+    }
+    | Expr '>' Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: GTR (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            g_has_error = true;
+        }
+
+        CODEGEN("%csub\n", $<s_val>1[0] + 32);
+        // CODEGEN("%cconst_0\n", $<s_val>1[0] + 32);
+        if (strcmp($<s_val>1, "F") == 0) {
+            CODEGEN("fconst_0\n");
+            CODEGEN("fcmpg\n");
+        }
+        CODEGEN("ifgt L_true%d\n", g_label_cnt);
+        CODEGEN("iconst_0\n");
+        CODEGEN("goto L_end%d\n", g_label_cnt);
+        CODEGEN("L_true%d:\n", g_label_cnt);
+        CODEGEN("iconst_1\n");
+        CODEGEN("L_end%d:\n", g_label_cnt);
+        g_label_cnt++;
+        //printf("GTR\n");
+        $$ = "Z";
+    }
+
+    | Expr '<' Expr {
+        if (strcmp($<s_val>1, $<s_val>3) != 0) {
+            char msg[100];
+            sprintf(msg, "invalid operation: LSS (mismatched types %s and %s)", $<s_val>1, $<s_val>3);
+            yyerror(msg);
+            g_has_error = true;
+        }
+
+        CODEGEN("%csub\n", $<s_val>1[0] + 32);
+        // CODEGEN("%cconst_0\n", $<s_val>1[0] + 32);
+        if (strcmp($<s_val>1, "F") == 0) {
+            CODEGEN("fconst_0\n");
+            CODEGEN("fcmpg\n");
+        }
+        CODEGEN("iflt L_true%d\n", g_label_cnt);
+        CODEGEN("iconst_0\n");
+        CODEGEN("goto L_end%d\n", g_label_cnt);
+        CODEGEN("L_true%d:\n", g_label_cnt);
+        CODEGEN("iconst_1\n");
+        CODEGEN("L_end%d:\n", g_label_cnt);
+        g_label_cnt++;
+        //printf("GTR\n");
+        $$ = "Z";
+    }
+    | Expr AS Type { 
+        printf("%c2%c\n", $<s_val>1[0], $<s_val>3[0]);
+        $$ = $<s_val>3;
+    }
+;
+
+ArrayElements
+    : ArrayElements ',' Expr { $$ = $<s_val>3; }
+    | Expr { $$ = $<s_val>1; }
 ;
 
 PrintStmt
@@ -239,6 +420,50 @@ PrintStmt
     }
 ;
 
+DeclarationStmt
+    : LET MutType ID ':' Type '=' Expr ';' { 
+        insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
+        CODEGEN("%cstore %d\n", $<s_val>5[0] + 32, lookup_symbol($<s_val>3)->addr);
+    } 
+    | LET MutType ID ':' Type ';' { 
+        insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
+        CODEGEN("%cstore %d\n", $<s_val>5[0] + 32, lookup_symbol($<s_val>3)->addr);
+    }
+    | LET MutType ID '=' Expr ';' { 
+        insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
+        CODEGEN("%cstore %d\n", $<s_val>5[0] + 32, lookup_symbol($<s_val>3)->addr);
+    }
+;
+
+AssignmentStmt
+    : ID AssignmentOperatorType Expr ';' { 
+        symbol_t *target = lookup_symbol($<s_val>1);
+        if (target == NULL) {
+            char msg[100];
+            sprintf(msg, "undefined: %s", $<s_val>1);
+            yyerror(msg);
+            g_has_error = true;
+        }else {
+            printf("%s\n", $<s_val>2);
+            if (target->mut != 1) {
+                char msg[100];
+                sprintf(msg, "cannot borrow immutable borrowed content `%s` as mutable", $<s_val>1);
+                yyerror(msg);
+                g_has_error = true;
+            }
+        } 
+    }
+;
+
+IfStmt
+    : IF Expr Block %prec IFX
+    | IF Expr Block ELSE Block 
+;
+
+WhileStmt
+    : WHILE Expr Block
+;
+
 Type
     : INT { $$ = "I"; }
     | FLOAT { $$ = "F"; }
@@ -246,7 +471,7 @@ Type
     | '&' STR { $$ = "Ljava/lang/String;"; }
     | '[' Type ';' Expr ']' { 
         char buf[100];
-        sprintf(buf, "[%s", $<s_val>2);
+        sprintf(buf, "newarray %s", $<s_val>2);
         $$ = buf;
     }
     | /* empty */ { $$ = "V"; }
@@ -255,6 +480,20 @@ Type
 PrintType
     : PRINT { $$ = "print"; }
     | PRINTLN { $$ = "println"; }
+;
+
+MutType
+    : MUT { $$ = 1; }
+    | /* empty */ { $$ = 0; }
+;
+
+AssignmentOperatorType
+    : '=' { $$ = "ASSIGN"; }
+    | ADD_ASSIGN { $$ = "ADD_ASSIGN"; }
+    | SUB_ASSIGN { $$ = "SUB_ASSIGN"; }
+    | MUL_ASSIGN { $$ = "MUL_ASSIGN"; }
+    | DIV_ASSIGN { $$ = "DIV_ASSIGN"; }
+    | REM_ASSIGN { $$ = "REM_ASSIGN"; }
 ;
 
 FunctionArguments
