@@ -14,7 +14,7 @@
     int yylex_destroy ();
     void yyerror (char const *s)
     {
-        printf("error:%d: %s\n", yylineno, s);
+        printf("error:%d: %s\n", yylineno + 1, s);
     }
 
     extern int yylineno;
@@ -32,11 +32,38 @@
             fprintf(fout, __VA_ARGS__); \
         } while (0)
 
+    /* Define symbol table node */
+    typedef struct symbol {
+        int index;
+        char *name;
+        int mut;
+        char *type;
+        int addr;
+        int lineno;
+        char *func_sig;
+        struct symbol *next;
+        struct symbol *prev;
+    } symbol_t;
+
+    typedef struct symbol_table {
+        int scope_level;
+        symbol_t *element;
+        struct symbol_table *next;
+    } symbol_table_t;
+
+    /* Current Symbol Table alway dummy_table->next */
+    symbol_table_t *dummy_table;
+
+
+    /* Record next address */
+    int next_addr = -1;
+
+
     /* Symbol table function - you can add new functions if needed. */
     /* parameters and return type can be changed */
     static void create_symbol();
-    static void insert_symbol();
-    static void lookup_symbol();
+    static void insert_symbol(char *name, int mut, char *type, char *func_sig);
+    symbol_t* lookup_symbol(char *name);
     static void dump_symbol();
 
     /* Global variables */
@@ -67,15 +94,35 @@
 %token IF ELSE FOR WHILE LOOP
 %token PRINT PRINTLN
 %token FUNC RETURN BREAK
-%token ID ARROW AS IN DOTDOT RSHIFT LSHIFT
+%token ARROW AS IN DOTDOT RSHIFT LSHIFT
 
 /* Token with return, which need to sepcify type */
 %token <i_val> INT_LIT
 %token <f_val> FLOAT_LIT
 %token <s_val> STRING_LIT
+%token <s_val> ID
 
 /* Nonterminal with return, which need to sepcify type */
 %type <s_val> Type
+%type <s_val> Expr
+%type <s_val> PrintType
+/* %type <i_val> MutType
+%type <s_val> AssignmentOperatorType
+%type <s_val> ArrayElements */
+%type <s_val> FunctionArguments
+
+/* Define operator precedence and associativity */
+%nonassoc IFX
+%nonassoc ELSE
+%left LOR
+%left LAND
+%right '!'
+%nonassoc GEQ LEQ EQL NEQ '>' '<'
+%left LSHIFT RSHIFT
+%left '+' '-'
+%left '*' '/' '%'
+%right UMINUS
+%right AS
 
 /* Yacc will start at this nonterminal */
 %start Program
@@ -84,7 +131,7 @@
 %%
 
 Program
-    : GlobalStatementList
+    : { create_symbol(); } GlobalStatementList { dump_symbol(); }
 ;
 
 GlobalStatementList 
@@ -98,8 +145,103 @@ GlobalStatement
 ;
 
 FunctionDeclStmt
-    :
+    : FUNC ID '(' Type ')' { 
+        CODEGEN(".method public static %s()")
+        printf("func: %s\n", $<s_val>2); 
+        char *sig = (char *)malloc(strlen($<s_val>4) + 10);
+        sprintf(sig, "(%s)V", $<s_val>4);
+        insert_symbol($<s_val>2, -1, "func", sig);
+    } Block
 ;
+
+StmtList
+    : StmtList Stmt
+    | /* empty */
+;
+
+Stmt
+    : PrintStmt
+;
+
+Block
+    : '{' { create_symbol(); g_indent_cnt++; } StmtList '}' { dump_symbol(); g_indenet_cnt--; }
+;
+
+Expr
+    : ID {
+        symbol_t *tmp = lookup_symbol($<s_val>1);
+        if (tmp == NULL) {
+            char msg[100];
+            sprintf(msg, "undefined: %s", $<s_val>1);
+            yyerror(msg);
+            HAS_ERROR = TRUE;
+            $$ = "undefined";
+        } else {
+            printf("IDENT (name=%s, address=%d)\n", $<s_val>1, tmp->addr);
+            $$ = tmp->type; 
+        }
+        
+    }
+    | INT_LIT {
+        printf("INT_LIT %d\n", $<i_val>1);
+        $$ = "i32";
+    }
+    | FLOAT_LIT {
+        printf("FLOAT_LIT %f\n", $<f_val>1);
+        $$ = "f32";
+    }
+    | '"' STRING_LIT '"' {
+        printf("STRING_LIT \"%s\"\n", $<s_val>2);
+        $$ = "str";
+    }
+    | '"' '"' {
+        printf("STRING_LIT \"\"\n");
+        $$ = "str";
+    }
+    | TRUE {
+        printf("bool TRUE\n");
+        $$ = "bool";
+    }
+    | FALSE {
+        printf("bool FALSE\n");
+        $$ = "bool";
+    }
+;
+
+PrintStmt
+    : PrintType '(' Expr ')' ';' {
+        printf("%s %s\n", $<s_val>1, $<s_val>3);
+    }
+;
+
+Type
+    : INT { $$ = "I"; }
+    | FLOAT { $$ = "F"; }
+    | BOOL { $$ = "Z"; }
+    | '&' STR { $$ = "Ljava/lang/String;"; }
+    | '[' Type ';' Expr ']' { 
+        char buf[100];
+        sprintf(buf, "[%s", $<s_val>2);
+        $$ = buf;
+    }
+    | /* empty */ { $$ = "V"; }
+;
+
+PrintType
+    : PRINT { $$ = "PRINT"; }
+    | PRINTLN { $$ = "PRINTLN"; }
+;
+
+FunctionArguments
+    : FunctionArguments ',' Type ID {
+        char buf[100] = $<s_val>1;
+        strcat(buf, $<s_val>3);
+        $$ = buf;
+    }
+    | Type ID { $$ = $<s_val>1; }
+    | /* empty */ { $$ = "V"; }
+;
+
 
 %%
 
@@ -125,7 +267,11 @@ int main(int argc, char *argv[])
 
     /* Symbol table init */
     // Add your code
-
+    dummy_table = (symbol_table_t*) malloc(sizeof(symbol_table_t));
+    dummy_table->scope_level = -1;
+    dummy_table->element = NULL;
+    dummy_table->next = dummy_table;
+    
     yylineno = 0;
     yyparse();
 
@@ -144,20 +290,89 @@ int main(int argc, char *argv[])
 }
 
 static void create_symbol() {
-    printf("> Create symbol table (scope level %d)\n", 0);
+    /* Create dummy symbol */
+    symbol_t *dummy_symbol = (symbol_t*) malloc(sizeof(symbol_t));
+    dummy_symbol->index = -1;
+    dummy_symbol->name = NULL;
+    dummy_symbol->mut = -1;
+    dummy_symbol->type = NULL;
+    dummy_symbol->addr = -1;
+    dummy_symbol->lineno = -1;
+    dummy_symbol->func_sig = NULL;
+    dummy_symbol->next = dummy_symbol;
+    dummy_symbol->prev = dummy_symbol;
+
+    /* Create symbol table */
+    symbol_table_t *new_symbol_table = (symbol_table_t*) malloc(sizeof(symbol_table_t));
+    new_symbol_table->scope_level = dummy_table->next->scope_level + 1;
+    new_symbol_table->element = dummy_symbol;
+    new_symbol_table->next = dummy_table->next;
+    dummy_table->next = new_symbol_table;
+
+    printf("> Create symbol table (scope level %d)\n", dummy_table->next->scope_level);
 }
 
-static void insert_symbol() {
-    printf("> Insert `%s` (addr: %d) to scope level %d\n", "XXX", 0, 0);
+static void insert_symbol(char *name, int mut, char *type, char *func_sig) {
+    printf("> Insert `%s` (addr: %d) to scope level %d\n", name, next_addr, dummy_table->next->scope_level);
+    symbol_t *new_symbol = (symbol_t*) malloc(sizeof(symbol_t));
+    new_symbol->index = dummy_table->next->element->prev->index + 1;
+    new_symbol->name = strdup(name);
+    new_symbol->mut = mut;
+    new_symbol->type = strdup(type);
+    new_symbol->addr = next_addr++;
+    new_symbol->lineno = yylineno + 1;
+    new_symbol->func_sig = strdup(func_sig);
+    new_symbol->next = dummy_table->next->element;
+    new_symbol->prev = dummy_table->next->element->prev;
+
+    dummy_table->next->element->prev->next = new_symbol;
+    dummy_table->next->element->prev = new_symbol;
+
 }
 
-static void lookup_symbol() {
+symbol_t* lookup_symbol(char *name) {
+    symbol_table_t *temp_table = dummy_table->next;
+    while (temp_table != dummy_table) {
+        symbol_t *tmp = temp_table->element->next;
+        while (tmp != temp_table->element) {
+            if (strcmp(tmp->name, name) == 0) {
+                return tmp;
+            }
+            tmp = tmp->next;
+        }
+        temp_table = temp_table->next;
+    }
+
+    return NULL;
 }
 
 static void dump_symbol() {
-    printf("\n> Dump symbol table (scope level: %d)\n", 0);
+    /* printf("\n> Dump symbol table (scope level: %d)\n", 0);
+    printf("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
+        "Index", "Name", "Mut","Type", "Addr", "Lineno", "Func_sig"); */
+    /* printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
+            0, "name", 0, "type", 0, 0, "func_sig"); */
+
+    printf("\n> Dump symbol table (scope level: %d)\n", dummy_table->next->scope_level);
     printf("%-10s%-10s%-10s%-10s%-10s%-10s%-10s\n",
         "Index", "Name", "Mut","Type", "Addr", "Lineno", "Func_sig");
-    printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
-            0, "name", 0, "type", 0, 0, "func_sig");
+    symbol_t *cur = dummy_table->next->element->next;
+    while (cur != dummy_table->next->element) {
+        printf("%-10d%-10s%-10d%-10s%-10d%-10d%-10s\n",
+            cur->index, cur->name, cur->mut, cur->type, cur->addr, cur->lineno, cur->func_sig);
+        symbol_t *tmp = cur->next;
+
+        free(cur->name);
+        free(cur->type);
+        free(cur->func_sig);
+        free(cur);
+
+        cur = tmp;
+    }
+
+    symbol_table_t *temp = dummy_table->next;
+    dummy_table->next = temp->next;
+    free(temp->element);
+    free(temp);
+    
 }

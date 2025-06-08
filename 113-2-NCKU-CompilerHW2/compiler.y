@@ -415,8 +415,8 @@ AssignmentOperatorType
 
 FunctionArguments
     : FunctionArguments ',' Type ID {
-        char *buf = $<s_val>1;
-        strcat(buf, $<s_val>3);
+        char *buf = malloc(strlen($<s_val>1) + strlen($<s_val>3) + 10);
+        sprintf(buf, "%s%s", $<s_val>1, $<s_val>3);
         $$ = buf;
     }
     | Type ID { $$ = $<s_val>1; }

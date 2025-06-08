@@ -1985,8 +1985,8 @@ yyreduce:
   case 74: /* FunctionArguments: FunctionArguments ',' Type ID  */
 #line 417 "compiler.y"
                                     {
-        char *buf = (yyvsp[-3].s_val);
-        strcat(buf, (yyvsp[-1].s_val));
+        char *buf = malloc(strlen((yyvsp[-3].s_val)) + strlen((yyvsp[-1].s_val)) + 10);
+        sprintf(buf, "%s%s", (yyvsp[-3].s_val), (yyvsp[-1].s_val));
         (yyval.s_val) = buf;
     }
 #line 1993 "y.tab.c"
