@@ -101,6 +101,7 @@
 %type <i_val> MutType
 %type <s_val> AssignmentOperatorType
 %type <s_val> ArrayElements
+%type <s_val> FunctionArguments
 
 /* Define operator precedence and associativity */
 %nonassoc IFX
@@ -135,7 +136,7 @@ GlobalStatement
 ;
 
 FunctionDeclStmt
-    : FUNC ID '(' Type ')' { 
+    : FUNC ID '(' FunctionArguments ')' { 
         printf("func: %s\n", $<s_val>2); 
         char *sig = (char *)malloc(strlen($<s_val>4) + 10);
         sprintf(sig, "(%s)V", $<s_val>4);
@@ -384,7 +385,6 @@ WhileStmt
     : WHILE Expr Block
 ;
 
-;
 Type
     : INT { $$ = "i32"; }
     | FLOAT { $$ = "f32"; }
@@ -411,6 +411,16 @@ AssignmentOperatorType
     | MUL_ASSIGN { $$ = "MUL_ASSIGN"; }
     | DIV_ASSIGN { $$ = "DIV_ASSIGN"; }
     | REM_ASSIGN { $$ = "REM_ASSIGN"; }
+;
+
+FunctionArguments
+    : FunctionArguments ',' Type ID {
+        char *buf = $<s_val>1;
+        strcat(buf, $<s_val>3);
+        $$ = buf;
+    }
+    | Type ID { $$ = $<s_val>1; }
+    | /* empty */ { $$ = "V"; }
 ;
 
 %%
