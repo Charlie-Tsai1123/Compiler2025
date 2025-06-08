@@ -792,11 +792,11 @@ static const yytype_int16 yyrline[] =
      178,   179,   183,   184,   185,   186,   187,   188,   192,   192,
      198,   221,   225,   229,   235,   241,   245,   249,   252,   259,
      263,   269,   270,   274,   278,   282,   286,   290,   302,   311,
-     316,   321,   331,   342,   353,   363,   388,   412,   419,   420,
-     424,   424,   432,   444,   456,   471,   498,   498,   553,   554,
-     558,   562,   563,   564,   565,   566,   571,   575,   576,   580,
-     581,   585,   586,   587,   588,   589,   593,   598,   599,   603,
-     604
+     316,   321,   331,   342,   353,   363,   388,   412,   420,   421,
+     425,   425,   433,   445,   457,   472,   499,   499,   554,   555,
+     559,   563,   564,   565,   566,   567,   572,   576,   577,   581,
+     582,   586,   587,   588,   589,   590,   594,   599,   600,   604,
+     605
 };
 #endif
 
@@ -1931,42 +1931,43 @@ yyreduce:
   case 47: /* Expr: Expr AS Type  */
 #line 412 "compiler.y"
                    { 
-        printf("%c2%c\n", (yyvsp[-2].s_val)[0], (yyvsp[0].s_val)[0]);
+        //printf("%c2%c\n", $<s_val>1[0], $<s_val>3[0]);
+        CODEGEN("%c2%c\n", (yyvsp[-2].s_val)[0] + 32, (yyvsp[0].s_val)[0] + 32);
         (yyval.s_val) = (yyvsp[0].s_val);
     }
-#line 1938 "y.tab.c"
+#line 1939 "y.tab.c"
     break;
 
   case 48: /* ArrayElements: ArrayElements ',' Expr  */
-#line 419 "compiler.y"
+#line 420 "compiler.y"
                              { (yyval.s_val) = (yyvsp[0].s_val); }
-#line 1944 "y.tab.c"
+#line 1945 "y.tab.c"
     break;
 
   case 49: /* ArrayElements: Expr  */
-#line 420 "compiler.y"
+#line 421 "compiler.y"
            { (yyval.s_val) = (yyvsp[0].s_val); }
-#line 1950 "y.tab.c"
+#line 1951 "y.tab.c"
     break;
 
   case 50: /* $@4: %empty  */
-#line 424 "compiler.y"
+#line 425 "compiler.y"
                 { CODEGEN("getstatic java/lang/System/out Ljava/io/PrintStream;\n"); }
-#line 1956 "y.tab.c"
+#line 1957 "y.tab.c"
     break;
 
   case 51: /* PrintStmt: PrintType $@4 '(' Expr ')' ';'  */
-#line 424 "compiler.y"
+#line 425 "compiler.y"
                                                                                                         {
         CODEGEN("invokevirtual java/io/PrintStream/%s(%s)V\n", (yyvsp[-5].s_val), (yyvsp[-2].s_val));
 
         // printf("%s %s\n", $<s_val>1, $<s_val>3);
     }
-#line 1966 "y.tab.c"
+#line 1967 "y.tab.c"
     break;
 
   case 52: /* DeclarationStmt: LET MutType ID ':' Type '=' Expr ';'  */
-#line 432 "compiler.y"
+#line 433 "compiler.y"
                                            { 
         insert_symbol((yyvsp[-5].s_val), (yyvsp[-6].i_val), (yyvsp[-3].s_val), "-");
         char type;
@@ -1979,28 +1980,28 @@ yyreduce:
         }
         CODEGEN("%cstore %d\n", type, lookup_symbol((yyvsp[-5].s_val))->addr);
     }
-#line 1983 "y.tab.c"
+#line 1984 "y.tab.c"
     break;
 
   case 53: /* DeclarationStmt: LET MutType ID ':' Type ';'  */
-#line 444 "compiler.y"
+#line 445 "compiler.y"
                                   { 
         insert_symbol((yyvsp[-3].s_val), (yyvsp[-4].i_val), (yyvsp[-1].s_val), "-");
-        char type;
-        if ((yyvsp[-1].s_val)[0] == 'Z') {
-            type = 'i';
-        } else if (strcmp((yyvsp[-1].s_val), "Ljava/lang/String;") == 0) {
-            type = 'a';
-        } else {
-            type = (yyvsp[-1].s_val)[0] + 32;
-        }
-        CODEGEN("%cstore %d\n", type, lookup_symbol((yyvsp[-3].s_val))->addr);
+        // char type;
+        // if ($<s_val>5[0] == 'Z') {
+        //     type = 'i';
+        // } else if (strcmp($<s_val>5, "Ljava/lang/String;") == 0) {
+        //     type = 'a';
+        // } else {
+        //     type = $<s_val>5[0] + 32;
+        // }
+        // CODEGEN("%cstore %d\n", type, lookup_symbol($<s_val>3)->addr);
     }
-#line 2000 "y.tab.c"
+#line 2001 "y.tab.c"
     break;
 
   case 54: /* DeclarationStmt: LET MutType ID '=' Expr ';'  */
-#line 456 "compiler.y"
+#line 457 "compiler.y"
                                   { 
         insert_symbol((yyvsp[-3].s_val), (yyvsp[-4].i_val), (yyvsp[-1].s_val), "-");
         char type;
@@ -2013,11 +2014,11 @@ yyreduce:
         }
         CODEGEN("%cstore %d\n", type, lookup_symbol((yyvsp[-3].s_val))->addr);
     }
-#line 2017 "y.tab.c"
+#line 2018 "y.tab.c"
     break;
 
   case 55: /* AssignmentStmt: ID '=' Expr ';'  */
-#line 471 "compiler.y"
+#line 472 "compiler.y"
                      {
         symbol_t *target = lookup_symbol((yyvsp[-3].s_val));
         if (target == NULL) {
@@ -2045,11 +2046,11 @@ yyreduce:
             CODEGEN("%cstore %d\n", type, target->addr);
         } 
     }
-#line 2049 "y.tab.c"
+#line 2050 "y.tab.c"
     break;
 
   case 56: /* $@5: %empty  */
-#line 498 "compiler.y"
+#line 499 "compiler.y"
          {
         symbol_t *target = lookup_symbol((yyvsp[0].s_val));
         if (target == NULL) {
@@ -2076,11 +2077,11 @@ yyreduce:
             CODEGEN("%cload %d\n", type, target->addr);
         } 
     }
-#line 2080 "y.tab.c"
+#line 2081 "y.tab.c"
     break;
 
   case 57: /* AssignmentStmt: ID $@5 AssignmentOperatorType Expr ';'  */
-#line 523 "compiler.y"
+#line 524 "compiler.y"
                                         { 
         symbol_t *target = lookup_symbol((yyvsp[-4].s_val));
         if (target == NULL) {
@@ -2108,139 +2109,139 @@ yyreduce:
             CODEGEN("%cstore %d\n", type, target->addr);
         } 
     }
-#line 2112 "y.tab.c"
+#line 2113 "y.tab.c"
     break;
 
   case 61: /* Type: INT  */
-#line 562 "compiler.y"
+#line 563 "compiler.y"
           { (yyval.s_val) = "I"; }
-#line 2118 "y.tab.c"
+#line 2119 "y.tab.c"
     break;
 
   case 62: /* Type: FLOAT  */
-#line 563 "compiler.y"
+#line 564 "compiler.y"
             { (yyval.s_val) = "F"; }
-#line 2124 "y.tab.c"
+#line 2125 "y.tab.c"
     break;
 
   case 63: /* Type: BOOL  */
-#line 564 "compiler.y"
+#line 565 "compiler.y"
            { (yyval.s_val) = "Z"; }
-#line 2130 "y.tab.c"
+#line 2131 "y.tab.c"
     break;
 
   case 64: /* Type: '&' STR  */
-#line 565 "compiler.y"
+#line 566 "compiler.y"
               { (yyval.s_val) = "Ljava/lang/String;"; }
-#line 2136 "y.tab.c"
+#line 2137 "y.tab.c"
     break;
 
   case 65: /* Type: '[' Type ';' Expr ']'  */
-#line 566 "compiler.y"
+#line 567 "compiler.y"
                             { 
         char buf[100];
         sprintf(buf, "newarray %s", (yyvsp[-3].s_val));
         (yyval.s_val) = buf;
     }
-#line 2146 "y.tab.c"
+#line 2147 "y.tab.c"
     break;
 
   case 66: /* Type: %empty  */
-#line 571 "compiler.y"
+#line 572 "compiler.y"
                   { (yyval.s_val) = "V"; }
-#line 2152 "y.tab.c"
+#line 2153 "y.tab.c"
     break;
 
   case 67: /* PrintType: PRINT  */
-#line 575 "compiler.y"
+#line 576 "compiler.y"
             { (yyval.s_val) = "print"; }
-#line 2158 "y.tab.c"
+#line 2159 "y.tab.c"
     break;
 
   case 68: /* PrintType: PRINTLN  */
-#line 576 "compiler.y"
+#line 577 "compiler.y"
               { (yyval.s_val) = "println"; }
-#line 2164 "y.tab.c"
+#line 2165 "y.tab.c"
     break;
 
   case 69: /* MutType: MUT  */
-#line 580 "compiler.y"
+#line 581 "compiler.y"
           { (yyval.i_val) = 1; }
-#line 2170 "y.tab.c"
+#line 2171 "y.tab.c"
     break;
 
   case 70: /* MutType: %empty  */
-#line 581 "compiler.y"
+#line 582 "compiler.y"
                   { (yyval.i_val) = 0; }
-#line 2176 "y.tab.c"
+#line 2177 "y.tab.c"
     break;
 
   case 71: /* AssignmentOperatorType: ADD_ASSIGN  */
-#line 585 "compiler.y"
+#line 586 "compiler.y"
                  { (yyval.s_val) = "add"; }
-#line 2182 "y.tab.c"
+#line 2183 "y.tab.c"
     break;
 
   case 72: /* AssignmentOperatorType: SUB_ASSIGN  */
-#line 586 "compiler.y"
+#line 587 "compiler.y"
                  { (yyval.s_val) = "sub"; }
-#line 2188 "y.tab.c"
+#line 2189 "y.tab.c"
     break;
 
   case 73: /* AssignmentOperatorType: MUL_ASSIGN  */
-#line 587 "compiler.y"
+#line 588 "compiler.y"
                  { (yyval.s_val) = "mul"; }
-#line 2194 "y.tab.c"
+#line 2195 "y.tab.c"
     break;
 
   case 74: /* AssignmentOperatorType: DIV_ASSIGN  */
-#line 588 "compiler.y"
+#line 589 "compiler.y"
                  { (yyval.s_val) = "div"; }
-#line 2200 "y.tab.c"
+#line 2201 "y.tab.c"
     break;
 
   case 75: /* AssignmentOperatorType: REM_ASSIGN  */
-#line 589 "compiler.y"
+#line 590 "compiler.y"
                  { (yyval.s_val) = "rem"; }
-#line 2206 "y.tab.c"
+#line 2207 "y.tab.c"
     break;
 
   case 76: /* FunctionArguments: FunctionArguments ',' Type ID  */
-#line 593 "compiler.y"
+#line 594 "compiler.y"
                                     {
         char *buf = malloc(strlen((yyvsp[-3].s_val)) + strlen((yyvsp[-1].s_val)) + 10);
         sprintf(buf, "%s%s", (yyvsp[-3].s_val), (yyvsp[-1].s_val));
         (yyval.s_val) = buf;
     }
-#line 2216 "y.tab.c"
+#line 2217 "y.tab.c"
     break;
 
   case 77: /* FunctionArguments: Type ID  */
-#line 598 "compiler.y"
+#line 599 "compiler.y"
               { (yyval.s_val) = (yyvsp[-1].s_val); }
-#line 2222 "y.tab.c"
+#line 2223 "y.tab.c"
     break;
 
   case 78: /* FunctionArguments: %empty  */
-#line 599 "compiler.y"
+#line 600 "compiler.y"
                   { (yyval.s_val) = "V"; }
-#line 2228 "y.tab.c"
+#line 2229 "y.tab.c"
     break;
 
   case 79: /* ArrowType: ARROW Type  */
-#line 603 "compiler.y"
+#line 604 "compiler.y"
                  { (yyval.s_val) = (yyvsp[0].s_val); }
-#line 2234 "y.tab.c"
+#line 2235 "y.tab.c"
     break;
 
   case 80: /* ArrowType: %empty  */
-#line 604 "compiler.y"
+#line 605 "compiler.y"
                   { (yyval.s_val) = "V"; }
-#line 2240 "y.tab.c"
+#line 2241 "y.tab.c"
     break;
 
 
-#line 2244 "y.tab.c"
+#line 2245 "y.tab.c"
 
       default: break;
     }
@@ -2433,7 +2434,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 606 "compiler.y"
+#line 607 "compiler.y"
 
 
 /* C code section */

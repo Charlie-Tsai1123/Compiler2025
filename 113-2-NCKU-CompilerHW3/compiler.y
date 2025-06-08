@@ -410,7 +410,8 @@ Expr
         $$ = "Z";
     }
     | Expr AS Type { 
-        printf("%c2%c\n", $<s_val>1[0], $<s_val>3[0]);
+        //printf("%c2%c\n", $<s_val>1[0], $<s_val>3[0]);
+        CODEGEN("%c2%c\n", $<s_val>1[0] + 32, $<s_val>3[0] + 32);
         $$ = $<s_val>3;
     }
 ;
@@ -443,15 +444,15 @@ DeclarationStmt
     } 
     | LET MutType ID ':' Type ';' { 
         insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
-        char type;
-        if ($<s_val>5[0] == 'Z') {
-            type = 'i';
-        } else if (strcmp($<s_val>5, "Ljava/lang/String;") == 0) {
-            type = 'a';
-        } else {
-            type = $<s_val>5[0] + 32;
-        }
-        CODEGEN("%cstore %d\n", type, lookup_symbol($<s_val>3)->addr);
+        // char type;
+        // if ($<s_val>5[0] == 'Z') {
+        //     type = 'i';
+        // } else if (strcmp($<s_val>5, "Ljava/lang/String;") == 0) {
+        //     type = 'a';
+        // } else {
+        //     type = $<s_val>5[0] + 32;
+        // }
+        // CODEGEN("%cstore %d\n", type, lookup_symbol($<s_val>3)->addr);
     }
     | LET MutType ID '=' Expr ';' { 
         insert_symbol($<s_val>3, $<i_val>2, $<s_val>5, "-");
