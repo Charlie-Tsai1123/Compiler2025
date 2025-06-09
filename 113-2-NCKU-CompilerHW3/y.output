@@ -94,33 +94,37 @@ Grammar
 
    60 IfCondition: Expr
 
-   61 WhileStmt: WHILE Expr Block
+   61 $@7: ε
 
-   62 Type: INT
-   63     | FLOAT
-   64     | BOOL
-   65     | '&' STR
-   66     | '[' Type ';' Expr ']'
-   67     | ε
+   62 $@8: ε
 
-   68 PrintType: PRINT
-   69          | PRINTLN
+   63 WhileStmt: WHILE $@7 Expr $@8 Block
 
-   70 MutType: MUT
-   71        | ε
+   64 Type: INT
+   65     | FLOAT
+   66     | BOOL
+   67     | '&' STR
+   68     | '[' Type ';' Expr ']'
+   69     | ε
 
-   72 AssignmentOperatorType: ADD_ASSIGN
-   73                       | SUB_ASSIGN
-   74                       | MUL_ASSIGN
-   75                       | DIV_ASSIGN
-   76                       | REM_ASSIGN
+   70 PrintType: PRINT
+   71          | PRINTLN
 
-   77 FunctionArguments: FunctionArguments ',' Type ID
-   78                  | Type ID
-   79                  | ε
+   72 MutType: MUT
+   73        | ε
 
-   80 ArrowType: ARROW Type
-   81          | ε
+   74 AssignmentOperatorType: ADD_ASSIGN
+   75                       | SUB_ASSIGN
+   76                       | MUL_ASSIGN
+   77                       | DIV_ASSIGN
+   78                       | REM_ASSIGN
+
+   79 FunctionArguments: FunctionArguments ',' Type ID
+   80                  | Type ID
+   81                  | ε
+
+   82 ArrowType: ARROW Type
+   83          | ε
 
 
 Terminals, with rules where they appear
@@ -129,31 +133,31 @@ Terminals, with rules where they appear
     '!' (33) 29
     '"' (34) 22 23
     '%' (37) 33
-    '&' (38) 65
+    '&' (38) 67
     '(' (40) 8 30 50
     ')' (41) 8 30 50
     '*' (42) 31
     '+' (43) 34
-    ',' (44) 47 77
+    ',' (44) 47 79
     '-' (45) 28 35
     '/' (47) 32
     ':' (58) 51 52
-    ';' (59) 50 51 52 53 54 56 66
+    ';' (59) 50 51 52 53 54 56 68
     '<' (60) 45
     '=' (61) 51 53 54
     '>' (62) 44
-    '[' (91) 26 27 66
-    ']' (93) 26 27 66
+    '[' (91) 26 27 68
+    ']' (93) 26 27 68
     '{' (123) 18
     '}' (125) 18
     error (256)
     LET (258) 51 52 53
-    MUT (259) 70
+    MUT (259) 72
     NEWLINE (260) 6
-    INT (261) 62
-    FLOAT (262) 63
-    BOOL (263) 64
-    STR (264) 65
+    INT (261) 64
+    FLOAT (262) 65
+    BOOL (263) 66
+    STR (264) 67
     TRUE (265) 24
     FALSE (266) 25
     GEQ (267) 40
@@ -162,22 +166,22 @@ Terminals, with rules where they appear
     NEQ (270) 43
     LOR (271) 39
     LAND (272) 38
-    ADD_ASSIGN (273) 72
-    SUB_ASSIGN (274) 73
-    MUL_ASSIGN (275) 74
-    DIV_ASSIGN (276) 75
-    REM_ASSIGN (277) 76
+    ADD_ASSIGN (273) 74
+    SUB_ASSIGN (274) 75
+    MUL_ASSIGN (275) 76
+    DIV_ASSIGN (276) 77
+    REM_ASSIGN (277) 78
     IF (278) 57 59
     ELSE (279) 59
     FOR (280)
-    WHILE (281) 61
+    WHILE (281) 63
     LOOP (282)
-    PRINT (283) 68
-    PRINTLN (284) 69
+    PRINT (283) 70
+    PRINTLN (284) 71
     FUNC (285) 8
     RETURN (286)
     BREAK (287)
-    ARROW (288) 80
+    ARROW (288) 82
     AS (289) 46
     IN (290)
     DOTDOT (291)
@@ -186,7 +190,7 @@ Terminals, with rules where they appear
     INT_LIT <i_val> (294) 20 27
     FLOAT_LIT <f_val> (295) 21
     STRING_LIT <s_val> (296) 22
-    ID <s_val> (297) 8 19 27 51 52 53 54 56 77 78
+    ID <s_val> (297) 8 19 27 51 52 53 54 56 79 80
     IFX (298)
     UMINUS (299)
 
@@ -221,13 +225,13 @@ Nonterminals, with rules where they appear
         on right: 9
     Block (74)
         on left: 18
-        on right: 8 14 57 59 61
+        on right: 8 14 57 59 63
     $@3 (75)
         on left: 17
         on right: 18
     Expr <s_val> (76)
         on left: 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46
-        on right: 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 50 51 53 54 56 60 61 66
+        on right: 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 50 51 53 54 56 60 63 68
     ArrayElements <s_val> (77)
         on left: 47 48
         on right: 26 47
@@ -256,25 +260,31 @@ Nonterminals, with rules where they appear
         on left: 60
         on right: 57 59
     WhileStmt (86)
-        on left: 61
+        on left: 63
         on right: 16
-    Type <s_val> (87)
-        on left: 62 63 64 65 66 67
-        on right: 46 51 52 66 77 78 80
-    PrintType <s_val> (88)
-        on left: 68 69
-        on right: 50
-    MutType <i_val> (89)
+    $@7 (87)
+        on left: 61
+        on right: 63
+    $@8 (88)
+        on left: 62
+        on right: 63
+    Type <s_val> (89)
+        on left: 64 65 66 67 68 69
+        on right: 46 51 52 68 79 80 82
+    PrintType <s_val> (90)
         on left: 70 71
+        on right: 50
+    MutType <i_val> (91)
+        on left: 72 73
         on right: 51 52 53
-    AssignmentOperatorType <s_val> (90)
-        on left: 72 73 74 75 76
+    AssignmentOperatorType <s_val> (92)
+        on left: 74 75 76 77 78
         on right: 56
-    FunctionArguments <s_val> (91)
-        on left: 77 78 79
-        on right: 8 77
-    ArrowType <s_val> (92)
-        on left: 80 81
+    FunctionArguments <s_val> (93)
+        on left: 79 80 81
+        on right: 8 79
+    ArrowType <s_val> (94)
+        on left: 82 83
         on right: 8
 
 
@@ -380,8 +390,8 @@ State 11
     '['    shift, and go to state 15
     '&'    shift, and go to state 16
 
-    ID        reduce using rule 67 (Type)
-    $default  reduce using rule 79 (FunctionArguments)
+    ID        reduce using rule 69 (Type)
+    $default  reduce using rule 81 (FunctionArguments)
 
     Type               go to state 17
     FunctionArguments  go to state 18
@@ -389,28 +399,28 @@ State 11
 
 State 12
 
-   62 Type: INT •
-
-    $default  reduce using rule 62 (Type)
-
-
-State 13
-
-   63 Type: FLOAT •
-
-    $default  reduce using rule 63 (Type)
-
-
-State 14
-
-   64 Type: BOOL •
+   64 Type: INT •
 
     $default  reduce using rule 64 (Type)
 
 
+State 13
+
+   65 Type: FLOAT •
+
+    $default  reduce using rule 65 (Type)
+
+
+State 14
+
+   66 Type: BOOL •
+
+    $default  reduce using rule 66 (Type)
+
+
 State 15
 
-   66 Type: '[' • Type ';' Expr ']'
+   68 Type: '[' • Type ';' Expr ']'
 
     INT    shift, and go to state 12
     FLOAT  shift, and go to state 13
@@ -418,21 +428,21 @@ State 15
     '['    shift, and go to state 15
     '&'    shift, and go to state 16
 
-    $default  reduce using rule 67 (Type)
+    $default  reduce using rule 69 (Type)
 
     Type  go to state 19
 
 
 State 16
 
-   65 Type: '&' • STR
+   67 Type: '&' • STR
 
     STR  shift, and go to state 20
 
 
 State 17
 
-   78 FunctionArguments: Type • ID
+   80 FunctionArguments: Type • ID
 
     ID  shift, and go to state 21
 
@@ -440,7 +450,7 @@ State 17
 State 18
 
     8 FunctionDeclStmt: FUNC ID '(' FunctionArguments • ')' ArrowType $@2 Block
-   77 FunctionArguments: FunctionArguments • ',' Type ID
+   79 FunctionArguments: FunctionArguments • ',' Type ID
 
     ')'  shift, and go to state 22
     ','  shift, and go to state 23
@@ -448,23 +458,23 @@ State 18
 
 State 19
 
-   66 Type: '[' Type • ';' Expr ']'
+   68 Type: '[' Type • ';' Expr ']'
 
     ';'  shift, and go to state 24
 
 
 State 20
 
-   65 Type: '&' STR •
+   67 Type: '&' STR •
 
-    $default  reduce using rule 65 (Type)
+    $default  reduce using rule 67 (Type)
 
 
 State 21
 
-   78 FunctionArguments: Type ID •
+   80 FunctionArguments: Type ID •
 
-    $default  reduce using rule 78 (FunctionArguments)
+    $default  reduce using rule 80 (FunctionArguments)
 
 
 State 22
@@ -473,14 +483,14 @@ State 22
 
     ARROW  shift, and go to state 25
 
-    $default  reduce using rule 81 (ArrowType)
+    $default  reduce using rule 83 (ArrowType)
 
     ArrowType  go to state 26
 
 
 State 23
 
-   77 FunctionArguments: FunctionArguments ',' • Type ID
+   79 FunctionArguments: FunctionArguments ',' • Type ID
 
     INT    shift, and go to state 12
     FLOAT  shift, and go to state 13
@@ -488,14 +498,14 @@ State 23
     '['    shift, and go to state 15
     '&'    shift, and go to state 16
 
-    $default  reduce using rule 67 (Type)
+    $default  reduce using rule 69 (Type)
 
     Type  go to state 27
 
 
 State 24
 
-   66 Type: '[' Type ';' • Expr ']'
+   68 Type: '[' Type ';' • Expr ']'
 
     TRUE       shift, and go to state 28
     FALSE      shift, and go to state 29
@@ -513,7 +523,7 @@ State 24
 
 State 25
 
-   80 ArrowType: ARROW • Type
+   82 ArrowType: ARROW • Type
 
     INT    shift, and go to state 12
     FLOAT  shift, and go to state 13
@@ -521,7 +531,7 @@ State 25
     '['    shift, and go to state 15
     '&'    shift, and go to state 16
 
-    $default  reduce using rule 67 (Type)
+    $default  reduce using rule 69 (Type)
 
     Type  go to state 39
 
@@ -537,7 +547,7 @@ State 26
 
 State 27
 
-   77 FunctionArguments: FunctionArguments ',' Type • ID
+   79 FunctionArguments: FunctionArguments ',' Type • ID
 
     ID  shift, and go to state 41
 
@@ -680,7 +690,7 @@ State 38
    44     | Expr • '>' Expr
    45     | Expr • '<' Expr
    46     | Expr • AS Type
-   66 Type: '[' Type ';' Expr • ']'
+   68 Type: '[' Type ';' Expr • ']'
 
     GEQ     shift, and go to state 50
     LEQ     shift, and go to state 51
@@ -703,9 +713,9 @@ State 38
 
 State 39
 
-   80 ArrowType: ARROW Type •
+   82 ArrowType: ARROW Type •
 
-    $default  reduce using rule 80 (ArrowType)
+    $default  reduce using rule 82 (ArrowType)
 
 
 State 40
@@ -719,9 +729,9 @@ State 40
 
 State 41
 
-   77 FunctionArguments: FunctionArguments ',' Type ID •
+   79 FunctionArguments: FunctionArguments ',' Type ID •
 
-    $default  reduce using rule 77 (FunctionArguments)
+    $default  reduce using rule 79 (FunctionArguments)
 
 
 State 42
@@ -1014,7 +1024,7 @@ State 56
     '['    shift, and go to state 15
     '&'    shift, and go to state 16
 
-    $default  reduce using rule 67 (Type)
+    $default  reduce using rule 69 (Type)
 
     Type  go to state 80
 
@@ -1183,9 +1193,9 @@ State 65
 
 State 66
 
-   66 Type: '[' Type ';' Expr ']' •
+   68 Type: '[' Type ';' Expr ']' •
 
-    $default  reduce using rule 66 (Type)
+    $default  reduce using rule 68 (Type)
 
 
 State 67
@@ -1847,7 +1857,7 @@ State 94
 
     MUT  shift, and go to state 109
 
-    $default  reduce using rule 71 (MutType)
+    $default  reduce using rule 73 (MutType)
 
     MutType  go to state 110
 
@@ -1874,34 +1884,25 @@ State 95
 
 State 96
 
-   61 WhileStmt: WHILE • Expr Block
+   63 WhileStmt: WHILE • $@7 Expr $@8 Block
 
-    TRUE       shift, and go to state 28
-    FALSE      shift, and go to state 29
-    INT_LIT    shift, and go to state 30
-    FLOAT_LIT  shift, and go to state 31
-    ID         shift, and go to state 32
-    '!'        shift, and go to state 33
-    '-'        shift, and go to state 34
-    '('        shift, and go to state 35
-    '"'        shift, and go to state 36
-    '['        shift, and go to state 37
+    $default  reduce using rule 61 ($@7)
 
-    Expr  go to state 113
+    $@7  go to state 113
 
 
 State 97
 
-   68 PrintType: PRINT •
+   70 PrintType: PRINT •
 
-    $default  reduce using rule 68 (PrintType)
+    $default  reduce using rule 70 (PrintType)
 
 
 State 98
 
-   69 PrintType: PRINTLN •
+   71 PrintType: PRINTLN •
 
-    $default  reduce using rule 69 (PrintType)
+    $default  reduce using rule 71 (PrintType)
 
 
 State 99
@@ -1983,9 +1984,9 @@ State 108
 
 State 109
 
-   70 MutType: MUT •
+   72 MutType: MUT •
 
-    $default  reduce using rule 70 (MutType)
+    $default  reduce using rule 72 (MutType)
 
 
 State 110
@@ -2049,43 +2050,20 @@ State 112
 
 State 113
 
-   31 Expr: Expr • '*' Expr
-   32     | Expr • '/' Expr
-   33     | Expr • '%' Expr
-   34     | Expr • '+' Expr
-   35     | Expr • '-' Expr
-   36     | Expr • LSHIFT Expr
-   37     | Expr • RSHIFT Expr
-   38     | Expr • LAND Expr
-   39     | Expr • LOR Expr
-   40     | Expr • GEQ Expr
-   41     | Expr • LEQ Expr
-   42     | Expr • EQL Expr
-   43     | Expr • NEQ Expr
-   44     | Expr • '>' Expr
-   45     | Expr • '<' Expr
-   46     | Expr • AS Type
-   61 WhileStmt: WHILE Expr • Block
+   63 WhileStmt: WHILE $@7 • Expr $@8 Block
 
-    GEQ     shift, and go to state 50
-    LEQ     shift, and go to state 51
-    EQL     shift, and go to state 52
-    NEQ     shift, and go to state 53
-    LOR     shift, and go to state 54
-    LAND    shift, and go to state 55
-    AS      shift, and go to state 56
-    RSHIFT  shift, and go to state 57
-    LSHIFT  shift, and go to state 58
-    '>'     shift, and go to state 59
-    '<'     shift, and go to state 60
-    '+'     shift, and go to state 61
-    '-'     shift, and go to state 62
-    '*'     shift, and go to state 63
-    '/'     shift, and go to state 64
-    '%'     shift, and go to state 65
-    '{'     shift, and go to state 67
+    TRUE       shift, and go to state 28
+    FALSE      shift, and go to state 29
+    INT_LIT    shift, and go to state 30
+    FLOAT_LIT  shift, and go to state 31
+    ID         shift, and go to state 32
+    '!'        shift, and go to state 33
+    '-'        shift, and go to state 34
+    '('        shift, and go to state 35
+    '"'        shift, and go to state 36
+    '['        shift, and go to state 37
 
-    Block  go to state 119
+    Expr  go to state 119
 
 
 State 114
@@ -2148,9 +2126,44 @@ State 118
 
 State 119
 
-   61 WhileStmt: WHILE Expr Block •
+   31 Expr: Expr • '*' Expr
+   32     | Expr • '/' Expr
+   33     | Expr • '%' Expr
+   34     | Expr • '+' Expr
+   35     | Expr • '-' Expr
+   36     | Expr • LSHIFT Expr
+   37     | Expr • RSHIFT Expr
+   38     | Expr • LAND Expr
+   39     | Expr • LOR Expr
+   40     | Expr • GEQ Expr
+   41     | Expr • LEQ Expr
+   42     | Expr • EQL Expr
+   43     | Expr • NEQ Expr
+   44     | Expr • '>' Expr
+   45     | Expr • '<' Expr
+   46     | Expr • AS Type
+   63 WhileStmt: WHILE $@7 Expr • $@8 Block
 
-    $default  reduce using rule 61 (WhileStmt)
+    GEQ     shift, and go to state 50
+    LEQ     shift, and go to state 51
+    EQL     shift, and go to state 52
+    NEQ     shift, and go to state 53
+    LOR     shift, and go to state 54
+    LAND    shift, and go to state 55
+    AS      shift, and go to state 56
+    RSHIFT  shift, and go to state 57
+    LSHIFT  shift, and go to state 58
+    '>'     shift, and go to state 59
+    '<'     shift, and go to state 60
+    '+'     shift, and go to state 61
+    '-'     shift, and go to state 62
+    '*'     shift, and go to state 63
+    '/'     shift, and go to state 64
+    '%'     shift, and go to state 65
+
+    $default  reduce using rule 62 ($@8)
+
+    $@8  go to state 131
 
 
 State 120
@@ -2189,42 +2202,42 @@ State 120
     '*'     shift, and go to state 63
     '/'     shift, and go to state 64
     '%'     shift, and go to state 65
-    ';'     shift, and go to state 131
+    ';'     shift, and go to state 132
 
 
 State 121
 
-   72 AssignmentOperatorType: ADD_ASSIGN •
-
-    $default  reduce using rule 72 (AssignmentOperatorType)
-
-
-State 122
-
-   73 AssignmentOperatorType: SUB_ASSIGN •
-
-    $default  reduce using rule 73 (AssignmentOperatorType)
-
-
-State 123
-
-   74 AssignmentOperatorType: MUL_ASSIGN •
+   74 AssignmentOperatorType: ADD_ASSIGN •
 
     $default  reduce using rule 74 (AssignmentOperatorType)
 
 
-State 124
+State 122
 
-   75 AssignmentOperatorType: DIV_ASSIGN •
+   75 AssignmentOperatorType: SUB_ASSIGN •
 
     $default  reduce using rule 75 (AssignmentOperatorType)
 
 
-State 125
+State 123
 
-   76 AssignmentOperatorType: REM_ASSIGN •
+   76 AssignmentOperatorType: MUL_ASSIGN •
 
     $default  reduce using rule 76 (AssignmentOperatorType)
+
+
+State 124
+
+   77 AssignmentOperatorType: DIV_ASSIGN •
+
+    $default  reduce using rule 77 (AssignmentOperatorType)
+
+
+State 125
+
+   78 AssignmentOperatorType: REM_ASSIGN •
+
+    $default  reduce using rule 78 (AssignmentOperatorType)
 
 
 State 126
@@ -2242,7 +2255,7 @@ State 126
     '"'        shift, and go to state 36
     '['        shift, and go to state 37
 
-    Expr  go to state 132
+    Expr  go to state 133
 
 
 State 127
@@ -2260,7 +2273,7 @@ State 127
     '"'        shift, and go to state 36
     '['        shift, and go to state 37
 
-    Expr  go to state 133
+    Expr  go to state 134
 
 
 State 128
@@ -2274,9 +2287,9 @@ State 128
     '['    shift, and go to state 15
     '&'    shift, and go to state 16
 
-    $default  reduce using rule 67 (Type)
+    $default  reduce using rule 69 (Type)
 
-    Type  go to state 134
+    Type  go to state 135
 
 
 State 129
@@ -2294,7 +2307,7 @@ State 129
     '"'        shift, and go to state 36
     '['        shift, and go to state 37
 
-    Expr  go to state 135
+    Expr  go to state 136
 
 
 State 130
@@ -2303,17 +2316,26 @@ State 130
 
     $default  reduce using rule 58 ($@6)
 
-    $@6  go to state 136
+    $@6  go to state 137
 
 
 State 131
+
+   63 WhileStmt: WHILE $@7 Expr $@8 • Block
+
+    '{'  shift, and go to state 67
+
+    Block  go to state 138
+
+
+State 132
 
    54 AssignmentStmt: ID '=' Expr ';' •
 
     $default  reduce using rule 54 (AssignmentStmt)
 
 
-State 132
+State 133
 
    31 Expr: Expr • '*' Expr
    32     | Expr • '/' Expr
@@ -2349,10 +2371,10 @@ State 132
     '*'     shift, and go to state 63
     '/'     shift, and go to state 64
     '%'     shift, and go to state 65
-    ';'     shift, and go to state 137
+    ';'     shift, and go to state 139
 
 
-State 133
+State 134
 
    31 Expr: Expr • '*' Expr
    32     | Expr • '/' Expr
@@ -2388,19 +2410,19 @@ State 133
     '*'     shift, and go to state 63
     '/'     shift, and go to state 64
     '%'     shift, and go to state 65
-    ')'     shift, and go to state 138
+    ')'     shift, and go to state 140
 
 
-State 134
+State 135
 
    51 DeclarationStmt: LET MutType ID ':' Type • '=' Expr ';'
    52                | LET MutType ID ':' Type • ';'
 
-    ';'  shift, and go to state 139
-    '='  shift, and go to state 140
+    ';'  shift, and go to state 141
+    '='  shift, and go to state 142
 
 
-State 135
+State 136
 
    31 Expr: Expr • '*' Expr
    32     | Expr • '/' Expr
@@ -2436,40 +2458,47 @@ State 135
     '*'     shift, and go to state 63
     '/'     shift, and go to state 64
     '%'     shift, and go to state 65
-    ';'     shift, and go to state 141
+    ';'     shift, and go to state 143
 
 
-State 136
+State 137
 
    59 IfStmt: IF IfCondition Block ELSE $@6 • Block
 
     '{'  shift, and go to state 67
 
-    Block  go to state 142
+    Block  go to state 144
 
 
-State 137
+State 138
+
+   63 WhileStmt: WHILE $@7 Expr $@8 Block •
+
+    $default  reduce using rule 63 (WhileStmt)
+
+
+State 139
 
    56 AssignmentStmt: ID $@5 AssignmentOperatorType Expr ';' •
 
     $default  reduce using rule 56 (AssignmentStmt)
 
 
-State 138
+State 140
 
    50 PrintStmt: PrintType $@4 '(' Expr ')' • ';'
 
-    ';'  shift, and go to state 143
+    ';'  shift, and go to state 145
 
 
-State 139
+State 141
 
    52 DeclarationStmt: LET MutType ID ':' Type ';' •
 
     $default  reduce using rule 52 (DeclarationStmt)
 
 
-State 140
+State 142
 
    51 DeclarationStmt: LET MutType ID ':' Type '=' • Expr ';'
 
@@ -2484,31 +2513,31 @@ State 140
     '"'        shift, and go to state 36
     '['        shift, and go to state 37
 
-    Expr  go to state 144
+    Expr  go to state 146
 
 
-State 141
+State 143
 
    53 DeclarationStmt: LET MutType ID '=' Expr ';' •
 
     $default  reduce using rule 53 (DeclarationStmt)
 
 
-State 142
+State 144
 
    59 IfStmt: IF IfCondition Block ELSE $@6 Block •
 
     $default  reduce using rule 59 (IfStmt)
 
 
-State 143
+State 145
 
    50 PrintStmt: PrintType $@4 '(' Expr ')' ';' •
 
     $default  reduce using rule 50 (PrintStmt)
 
 
-State 144
+State 146
 
    31 Expr: Expr • '*' Expr
    32     | Expr • '/' Expr
@@ -2544,10 +2573,10 @@ State 144
     '*'     shift, and go to state 63
     '/'     shift, and go to state 64
     '%'     shift, and go to state 65
-    ';'     shift, and go to state 145
+    ';'     shift, and go to state 147
 
 
-State 145
+State 147
 
    51 DeclarationStmt: LET MutType ID ':' Type '=' Expr ';' •
 

@@ -594,7 +594,9 @@ IfCondition
 ;
 
 WhileStmt
-    : WHILE Expr Block
+    : WHILE { block_stack[++block_top] = g_label_cnt++; CODEGEN("L_while%d:\n", block_stack[block_top]); } 
+      Expr { CODEGEN("ifeq L_while_end%d\n", block_stack[block_top]); } 
+      Block { CODEGEN("goto L_while%d\n", block_stack[block_top]); CODEGEN("L_while_end%d:\n", block_stack[block_top--]); }
 ;
 
 Type
