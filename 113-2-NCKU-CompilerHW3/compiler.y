@@ -56,10 +56,10 @@
     /* Current Symbol Table alway dummy_table->next */
     symbol_table_t *dummy_table;
 
-
     /* Record next address */
     int next_addr = -1;
-
+    int block_stack[100];
+    int block_top = -1;
 
     /* Symbol table function - you can add new functions if needed. */
     /* parameters and return type can be changed */
@@ -346,7 +346,19 @@ Expr
             yyerror(msg);
             g_has_error = true;
         }
-        printf("EQL\n");
+        //printf("EQL\n");
+        CODEGEN("%csub\n", $<s_val>1[0] + 32);
+        if (strcmp($<s_val>1, "F") == 0) {
+            CODEGEN("fconst_0\n");
+            CODEGEN("fcmpg\n");
+        }
+        CODEGEN("ifeq L_true%d\n", g_label_cnt);
+        CODEGEN("iconst_0\n");
+        CODEGEN("goto L_end%d\n", g_label_cnt);
+        CODEGEN("L_true%d:\n", g_label_cnt);
+        CODEGEN("iconst_1\n");
+        CODEGEN("L_end%d:\n", g_label_cnt);
+        g_label_cnt++;
         $$ = "Z";
     }
 
@@ -357,7 +369,19 @@ Expr
             yyerror(msg);
             g_has_error = true;
         }
-        printf("NEQ\n");
+        //printf("NEQ\n");
+        CODEGEN("%csub\n", $<s_val>1[0] + 32);
+        if (strcmp($<s_val>1, "F") == 0) {
+            CODEGEN("fconst_0\n");
+            CODEGEN("fcmpg\n");
+        }
+        CODEGEN("ifeq L_true%d\n", g_label_cnt);
+        CODEGEN("iconst_1\n");
+        CODEGEN("goto L_end%d\n", g_label_cnt);
+        CODEGEN("L_true%d:\n", g_label_cnt);
+        CODEGEN("iconst_0\n");
+        CODEGEN("L_end%d:\n", g_label_cnt);
+        g_label_cnt++;
         $$ = "Z";
     }
     | Expr '>' Expr {
@@ -551,8 +575,22 @@ AssignmentStmt
 ;
 
 IfStmt
-    : IF Expr Block %prec IFX
-    | IF Expr Block ELSE Block 
+    : IF IfCondition Block %prec IFX {
+        CODEGEN("L_else%d:\n", block_stack[block_top--]);
+    }
+    | IF IfCondition Block ELSE {
+        CODEGEN("goto L_else_end%d\n", block_stack[block_top]);
+        CODEGEN("L_else%d:\n", block_stack[block_top]);
+    } Block {
+        CODEGEN("L_else_end%d:\n", block_stack[block_top--]);
+    }
+;
+
+IfCondition
+    : Expr {
+        CODEGEN("ifeq L_else%d\n", g_label_cnt);
+        block_stack[++block_top] = g_label_cnt++;
+    }
 ;
 
 WhileStmt
